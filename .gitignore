@@ -1,0 +1,6 @@
+cmake_test/.cache/
+cmake_test/.vscode/
+cmake_test/Build/
+cmake_test/cmake/
+cmake_test/CMakeFiles/
+cmake_test/clangd/
