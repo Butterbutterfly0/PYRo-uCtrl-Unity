@@ -92,6 +92,8 @@ add_executable(${CMAKE_PROJECT_NAME}
         PYRo/Application/Demo/pyro_controller_demo.cpp
         PYRo/Application/Demo/pyro_shoot_demo.cpp
 
+        PYRo/Application/Mission/engineer_arm_mission.cpp
+
         PYRo/Debug/Debug_task.cpp
         PYRo/Debug/VOFA/pyro_vofa.cpp
         PYRo/Debug/JCOM/pyro_jcom.cpp
