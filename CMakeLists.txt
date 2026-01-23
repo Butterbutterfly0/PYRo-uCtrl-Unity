@@ -64,7 +64,7 @@ set(DSP_REPO "${CMAKE_CURRENT_SOURCE_DIR}/Ported_third_lib/CMSIS-DSP")
 
 add_compile_definitions(
         ARM_MATH_CM7
-        __FPU_PRESENT=1
+
         ARM_MATH_LOOPUNROLL
 )
 
@@ -113,25 +113,18 @@ add_executable(${CMAKE_PROJECT_NAME}
 
         PYRo/Component/CRC/PYRo_crc.cpp
 
-        PYRo/Component/IMU/AHRS.c
-        PYRo/Component/IMU/BMI088driver.c
-        PYRo/Component/IMU/BMI088Middleware.c
-        PYRo/Component/IMU/IMU_Base.c
-        PYRo/Component/IMU/IMU_Ext.c
-        PYRo/Component/IMU/MATH_LIB.c
-        PYRo/Component/IMU/PID.c
+        # PYRo/Component/IMU/AHRS.c
+        # PYRo/Component/IMU/BMI088driver.c
+        # PYRo/Component/IMU/BMI088Middleware.c
+        # PYRo/Component/IMU/IMU_Base.c
+        # PYRo/Component/IMU/IMU_Ext.c
+        # PYRo/Component/IMU/MATH_LIB.c
+        # PYRo/Component/IMU/PID.c
 
         PYRo/Component/Shoot/pyro_fric_drv.cpp
         PYRo/Component/Shoot/pyro_trigger_drv.cpp
         PYRo/Component/Shoot/pyro_shoot_base.cpp
         PYRo/Component/Shoot/pyro_shoot_17mm_control.cpp
-
-        PYRo/Application/Demo/pyro_rc_demo.cpp
-        PYRo/Application/Demo/demo_task.cpp
-        PYRo/Application/Demo/pyro_motor_demo.cpp
-        PYRo/Application/Demo/pyro_control_demo.cpp
-        PYRo/Application/Demo/pyro_controller_demo.cpp
-        PYRo/Application/Demo/pyro_shoot_demo.cpp
 
         PYRo/Debug/Debug_task.cpp
         PYRo/Debug/VOFA/pyro_vofa.cpp
@@ -187,7 +180,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC
 
         PYRo/Component/CRC
         PYRo/Component/Shoot
-        PYRo/Component/IMU
+        # PYRo/Component/IMU
         PYRo/Component/Referee
         PYRo/Component/Powermeter
         PYRo/Component/Powercontrol

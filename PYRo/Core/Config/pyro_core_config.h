@@ -8,7 +8,7 @@
 
 #define RC_DEMO_EN 0
 #define MOTOR_DEMO_EN 0
-#define CONTROLLER_DEMO_EN 0
+#define CONTROLLER_DEMO_EN 1
 #define CONTROL_DEMO_EN 0
 #define IMU_DEMO_EN 0
 #define REFEREE_DEMO_EN 0
