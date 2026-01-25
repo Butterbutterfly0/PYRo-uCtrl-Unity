@@ -93,8 +93,8 @@ class axis_control_t
             }
             else
             {
-                // _target_rot = _pos_pid->calculate(rot_angle_correction_pi(_feedback_pos,_target_pos,PI,-PI),_feedback_pos);
-                _target_rot=_pos_pid->calculate(_target_pos,_feedback_pos);
+                _target_rot = _pos_pid->calculate(rot_angle_correction_pi(_feedback_pos,_target_pos,PI,-PI),_feedback_pos);
+                // _target_rot=_pos_pid->calculate(_target_pos,_feedback_pos);
             }
             control_value = _rot_pid->calculate(_target_rot,_feedback_rot);
             _motor->send_torque(control_value);
@@ -126,7 +126,10 @@ pyro::axis_control_t *axis5;
 pyro::dm_motor_drv_t *axis5_motor;
 
 pyro::axis_control_t *axis6;
+pyro::pid_t *axis6_pos_pid ;
+pyro::pid_t *axis6_rot_pid ;
 pyro::dji_gm_6020_motor_drv_t *axis6_motor;
+float axis6_target_pos,axis6_target_rot,axis6_target_torque,axis6_feedback_pos,axis6_feedback_rot;
 
 pyro::dji_m2006_motor_drv_t *end_motor;
 
@@ -134,6 +137,9 @@ float motor_current_pos[7]={};
 float motor_target_pos[7]={};
 float motor_current_rot[7]={};
 float motor_current_torque[7]={};
+
+float end_targat_torque= 0;
+
 
 typedef enum
 {
@@ -162,8 +168,8 @@ void engineer_arm_init()
     axis1->set_upper_limit(pyro::PI/2);
     axis1->set_lower_limit(-pyro::PI/2);
 
-    pyro::pid_t *axis2_pos_pid = new pyro::pid_t(4,0.0,0.0,0.0,35);
-    pyro::pid_t *axis2_rot_pid = new pyro::pid_t(7.2,0.0,0.0,0.0,54);
+    pyro::pid_t *axis2_pos_pid = new pyro::pid_t(11,0.0,0.0,0.0,45);
+    pyro::pid_t *axis2_rot_pid = new pyro::pid_t(9.2,0.1,0.01,5.0,54);
     axis2_motor = new pyro::dm_motor_drv_t(0x1, 0x0, pyro::can_hub_t::can1);
     axis2_motor->set_position_range(-pyro::PI, pyro::PI);
     axis2_motor->set_rotate_range(-45, 45); 
@@ -173,8 +179,8 @@ void engineer_arm_init()
     axis2->set_upper_limit(2.83);
     axis2->set_lower_limit(-0.1);
 
-    pyro::pid_t *axis3_pos_pid = new pyro::pid_t(4,0.0,0.0,0.0,20);
-    pyro::pid_t *axis3_rot_pid = new pyro::pid_t(6,0.0,0.0,0.0,10);
+    pyro::pid_t *axis3_pos_pid = new pyro::pid_t(10,0.0,0.0,0.0,20);
+    pyro::pid_t *axis3_rot_pid = new pyro::pid_t(9,0.0,0.0,0.0,10);
     axis3_motor = new pyro::dm_motor_drv_t(0x3, 0x2, pyro::can_hub_t::can1);
     axis3_motor->set_position_range(-pyro::PI, pyro::PI);
     axis3_motor->set_rotate_range(-20, 20); 
@@ -208,15 +214,15 @@ void engineer_arm_init()
     axis5->set_upper_limit(0.0);
     axis5->set_lower_limit(-0.66);
 
-    pyro::pid_t *axis6_pos_pid = new pyro::pid_t(0.8,0.0,0.0,0.0,5);
-    pyro::pid_t *axis6_rot_pid = new pyro::pid_t(0.2,0.0,0.0,0.0,3);
-    axis6_motor =  new pyro::dji_gm_6020_motor_drv_t(pyro::dji_motor_tx_frame_t::register_id_t::id_1,pyro::can_hub_t::can2);
+    axis6_pos_pid = new pyro::pid_t(9,0.0,0.0,0.0,20);
+    axis6_rot_pid = new pyro::pid_t(0.12,0.1,0.0,1,3);
+    axis6_motor =  new pyro::dji_gm_6020_motor_drv_t(pyro::dji_motor_tx_frame_t::register_id_t::id_1,pyro::can_hub_t::can3);
     axis6 = new pyro::axis_control_t(axis6_motor,axis6_pos_pid,axis6_rot_pid);
     // axis6->enable_constraint();
     // axis6->set_upper_limit(pyro::PI/2) ;
     // axis6->set_lower_limit(-pyro::PI/2);
 
-    end_motor = new pyro::dji_m2006_motor_drv_t(pyro::dji_motor_tx_frame_t::register_id_t::id_1,pyro::can_hub_t::can2);
+    end_motor = new pyro::dji_m2006_motor_drv_t(pyro::dji_motor_tx_frame_t::register_id_t::id_1,pyro::can_hub_t::can3);
 }
 
 void enigneer_arm_update()
@@ -259,6 +265,8 @@ void enigneer_arm_update()
     axis4->update();
     axis5->update();
     axis6->update();
+    // axis6_feedback_pos=axis6_motor->get_current_position();
+    // axis6_feedback_rot=axis6_motor->get_current_rotate();
 }
 
 const pyro::dr16_drv_t::dr16_ctrl_t *rc_data;
@@ -294,12 +302,24 @@ void engineer_arm_set_control()
             motor_target_pos[4]+=rc_data->rc.ch_ly*0.001;
             motor_target_pos[5]+=rc_data->rc.ch_lx*0.01;
         }
+        end_targat_torque = rc_data->rc.wheel*1;
         axis1->set_target(motor_target_pos[0]);
         axis2->set_target(motor_target_pos[1]);
         axis3->set_target(motor_target_pos[2]);
         axis4->set_target(motor_target_pos[3]);
         axis5->set_target(motor_target_pos[4]);
         axis6->set_target(motor_target_pos[5]);
+        
+        // if(motor_target_pos[5]<-pyro::PI)
+        // {
+            // motor_target_pos[5]+=2*pyro::PI;
+        // }
+        // else if(motor_target_pos[5]>pyro::PI)
+        // {
+            // motor_target_pos[5]-=2*pyro::PI;
+        // }
+        // axis6_target_pos=motor_target_pos[5];
+        
     }
     else
     {
@@ -324,9 +344,9 @@ void engineer_arm_zeroforce()
 
 void engineer_arm_control()
 {
-    // axis1->control(0.005);
-    // axis2->control(0.005);
-    // axis3->control(0.005);
+    axis1->control(0.005);
+    axis2->control(0.005);
+    axis3->control(0.005);
     axis1_motor->send_torque(0);
     axis2_motor->send_torque(0);
     axis3_motor->send_torque(0);
@@ -334,6 +354,11 @@ void engineer_arm_control()
     axis4->control(0.005);
     axis5->control(0.005);
     axis6->control(0.005);
+
+    end_motor->send_torque(end_targat_torque);
+    // axis6_target_rot = axis6_pos_pid->calculate(axis6_target_pos,axis6_feedback_pos);
+    // axis6_target_torque = axis6_rot_pid->calculate(axis6_target_rot,axis6_feedback_rot);
+    // axis6_motor->send_torque(axis6_target_torque);
 }
 
 void engineer_arm_mission(void* args)
