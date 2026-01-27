@@ -94,6 +94,7 @@ add_executable(${CMAKE_PROJECT_NAME}
         PYRo/Core/Lock/pyro_rw_lock.cpp
         PYRo/Core/ETL/map.cpp
         PYRo/Core/Lock/pyro_rw_lock.cpp
+        PYRo/Core/DataBoard/pyro_databoard.cpp
 
         PYRo/Peripheral/CAN/pyro_can_drv.cpp
         PYRo/Peripheral/UART/pyro_uart_drv.cpp
@@ -168,6 +169,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC
         PYRo/Core/ETL
         PYRo/Core/Lock
         PYRo/Core/FSM
+        PYRo/Core/DataBoard
 
         PYRo/Peripheral/UART
         PYRo/Peripheral/CAN
