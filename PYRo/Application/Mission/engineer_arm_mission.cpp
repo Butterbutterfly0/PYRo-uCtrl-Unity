@@ -168,23 +168,23 @@ void engineer_arm_init()
     axis1->set_upper_limit(pyro::PI/2);
     axis1->set_lower_limit(-pyro::PI/2);
 
-    pyro::pid_t *axis2_pos_pid = new pyro::pid_t(11,0.0,0.0,0.0,45);
-    pyro::pid_t *axis2_rot_pid = new pyro::pid_t(9.2,0.1,0.01,5.0,54);
+    pyro::pid_t *axis2_pos_pid = new pyro::pid_t(15,0.1,0.0,5.0,45);
+    pyro::pid_t *axis2_rot_pid = new pyro::pid_t(13.2,0.3,0.01,5.0,40);
     axis2_motor = new pyro::dm_motor_drv_t(0x1, 0x0, pyro::can_hub_t::can1);
     axis2_motor->set_position_range(-pyro::PI, pyro::PI);
     axis2_motor->set_rotate_range(-45, 45); 
-    axis2_motor->set_torque_range(-54, 54);
+    axis2_motor->set_torque_range(-40, 40);
     axis2 = new pyro::axis_control_t(axis2_motor,axis2_pos_pid,axis2_rot_pid);
     axis2->enable_constraint();
     axis2->set_upper_limit(2.83);
     axis2->set_lower_limit(-0.1);
 
     pyro::pid_t *axis3_pos_pid = new pyro::pid_t(10,0.0,0.0,0.0,20);
-    pyro::pid_t *axis3_rot_pid = new pyro::pid_t(9,0.0,0.0,0.0,10);
+    pyro::pid_t *axis3_rot_pid = new pyro::pid_t(9,0.0,0.0,0.0,20);
     axis3_motor = new pyro::dm_motor_drv_t(0x3, 0x2, pyro::can_hub_t::can1);
     axis3_motor->set_position_range(-pyro::PI, pyro::PI);
     axis3_motor->set_rotate_range(-20, 20); 
-    axis3_motor->set_torque_range(-10, 10);
+    axis3_motor->set_torque_range(-20, 20);
     axis3 = new pyro::axis_control_t(axis3_motor,axis3_pos_pid,axis3_rot_pid);
     axis3->enable_constraint();
     axis3->set_upper_limit(2.83);
@@ -201,9 +201,11 @@ void engineer_arm_init()
     axis4->set_upper_limit(pyro::PI/2);
     axis4->set_lower_limit(-pyro::PI/2);
 
-    // pyro::pid_t *axis5_pos_pid = new pyro::pid_t(1.6,2.4,0.0,10,30);
-    pyro::pid_t *axis5_pos_pid = new pyro::pid_t(6.3,0,0.0,10,30);
 
+    // pyro::pid_t *axis5_pos_pid = new pyro::pid_t(6.3,0,0.0,10,30);
+    // pyro::pid_t *axis5_rot_pid = new pyro::pid_t(1.0,0.1,0.00,4,8);
+
+    pyro::pid_t *axis5_pos_pid = new pyro::pid_t(10.3,0.2,0.0,10,30);
     pyro::pid_t *axis5_rot_pid = new pyro::pid_t(1.0,0.1,0.00,4,8);
     axis5_motor = new pyro::dm_motor_drv_t(0x8, 0x9, pyro::can_hub_t::can2);
     axis5_motor->set_position_range(-pyro::PI, pyro::PI);
