@@ -20,7 +20,7 @@ class dm_motor_drv_t : public motor_base_t // MIT only
         over_load             = 0x0e,
     };
     dm_motor_drv_t(uint32_t tx_id, uint32_t rx_id, can_hub_t::which_can which);
-    ~dm_motor_drv_t();
+    ~dm_motor_drv_t()override;
 
     status_t enable() override;
     status_t disable() override;

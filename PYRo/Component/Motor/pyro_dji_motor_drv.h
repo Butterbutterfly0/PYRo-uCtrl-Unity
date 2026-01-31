@@ -60,7 +60,7 @@ class dji_motor_drv_t : public motor_base_t
   public:
     dji_motor_drv_t(dji_motor_tx_frame_t::register_id_t id,
                     can_hub_t::which_can which);
-    // ~dji_m_motor_drv_t();
+    ~dji_motor_drv_t()override{};
 
     status_t enable() override;
     status_t disable() override;
@@ -85,7 +85,7 @@ class dji_m3508_motor_drv_t : public dji_motor_drv_t
     static constexpr float reciprocal_reduction_ratio =  0.0520746310219994f;
     dji_m3508_motor_drv_t(pyro::dji_motor_tx_frame_t::register_id_t id,
                           can_hub_t::which_can which);
-    ~dji_m3508_motor_drv_t()
+    ~dji_m3508_motor_drv_t()override
     {
     }
 };
@@ -95,7 +95,7 @@ class dji_m2006_motor_drv_t : public dji_motor_drv_t
   public:
     dji_m2006_motor_drv_t(pyro::dji_motor_tx_frame_t::register_id_t id,
                           can_hub_t::which_can which);
-    ~dji_m2006_motor_drv_t()
+    ~dji_m2006_motor_drv_t()override
     {
     }
 };
@@ -104,7 +104,7 @@ class dji_gm_6020_motor_drv_t : public dji_motor_drv_t
   public:
     dji_gm_6020_motor_drv_t(pyro::dji_motor_tx_frame_t::register_id_t id,
                             can_hub_t::which_can which);
-    ~dji_gm_6020_motor_drv_t()
+    ~dji_gm_6020_motor_drv_t()override
     {
     }
 };
