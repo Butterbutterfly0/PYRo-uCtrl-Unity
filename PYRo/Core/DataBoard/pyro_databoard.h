@@ -39,7 +39,7 @@ namespace pyro
 
             bool operator==(const topic &other);
             data_status_t write(genenral_data_t& data);
-            data_status_t read(genenral_data_t& data);
+            data_status_t read(genenral_data_t* data);
             const char* get_name();
             TickType_t get_timestamp();
         private:
@@ -61,8 +61,8 @@ namespace pyro
             uint32_t create_topic(const char *name, data_type_t type);
             uint32_t get_topic_id(const char *name);
             bool delete_topic(const char *name);
-            topic::data_status_t write_topic(uint32_t id, genenral_data_t& data);
-            topic::data_status_t read(uint32_t id, genenral_data_t& data,TickType_t& timestamp);
+            topic::data_status_t write_topic(uint32_t id, genenral_data_t data);
+            topic::data_status_t read(uint32_t id, genenral_data_t* data,TickType_t& timestamp);
 
         private:
             topic *_topics[DATABOARD_CHANNEL_COUNT+1];

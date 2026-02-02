@@ -6,6 +6,8 @@
 #include "pyro_algo_pid.h"
 
 #include "pyro_rc_hub.h"
+
+#include "pyro_databoard.h"
 namespace pyro
 {
 class axis_control_t 
@@ -160,6 +162,10 @@ control_mode_t control_mode=ZERO_FORCE;
 
 const pyro::dr16_drv_t::dr16_ctrl_t *rc_data;
 
+extern pyro::databoard* global_databoard;
+
+uint32_t yaw_angle_topic_id,pitch_angle_topic_id,roll_angle_topic_id;
+
 void techcore_setcontrol()
 {
     rc_data = static_cast<const pyro::dr16_drv_t::dr16_ctrl_t *>(dr16_drv->read());
@@ -239,6 +245,10 @@ extern "C" void techcore_ctrl_task(void *param)
 
     z_axis_motor = new pyro::dji_m3508_motor_drv_t(pyro::dji_motor_tx_frame_t::id_2,pyro::can_hub_t::which_can::can2);
 
+    yaw_angle_topic_id = global_databoard->get_topic_id("yaw_axis_angle");
+    pitch_angle_topic_id = global_databoard->get_topic_id("pitch_axis_angle");
+    roll_angle_topic_id = global_databoard->get_topic_id("roll_axis_angle");
+
     osDelay(1000);
     yaw_motor->enable();
     vTaskDelay(1);
@@ -289,6 +299,10 @@ extern "C" void techcore_ctrl_task(void *param)
         pitch_control->set_target(axis_target_angle[1]);
         roll_control->set_target(axis_target_angle[2]);
 
+        global_databoard->write_topic(yaw_angle_topic_id,*((pyro::genenral_data_t*)&(axis_angle[0])));
+        global_databoard->write_topic(pitch_angle_topic_id,*((pyro::genenral_data_t*)&(axis_angle[1])));
+        global_databoard->write_topic(roll_angle_topic_id,*((pyro::genenral_data_t*)&(axis_angle[2])));
+
         if(control_mode == ZERO_FORCE)
         {
         yaw_motor->send_torque(0.0f);
@@ -303,9 +317,9 @@ extern "C" void techcore_ctrl_task(void *param)
         // yaw_motor->send_torque(control_current[0]);
         // pitch_motor->send_torque(control_current[1]);
         // roll_motor->send_torque(control_current[0]);
-        yaw_control->control(0);
-        pitch_control->control(0);
-        roll_control->control(0);
+        // yaw_control->control(0);
+        // pitch_control->control(0);
+        // roll_control->control(0);
 
         x_axis_motor->send_torque(control_current[0]);
         z_axis_motor->send_torque(control_current[1]);

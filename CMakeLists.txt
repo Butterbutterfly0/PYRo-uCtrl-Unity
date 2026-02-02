@@ -152,6 +152,7 @@ add_executable(${CMAKE_PROJECT_NAME}
         PYRo/Moudle/Chassis/Hybrid/pyro_hybrid_chassis.cpp
 
         PYRo/Application/Mission/pyro_techcore_ctrl.cpp
+        PYRo/Application/Mission/VOFA_thread.cpp
 )
 
 # Add STM32CubeMX generated sources (这会自动引入 specs 文件)
