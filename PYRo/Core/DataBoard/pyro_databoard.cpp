@@ -46,29 +46,31 @@ namespace pyro
         return DATA_ERROR;
     }
 
-    topic::data_status_t topic::read(genenral_data_t& data)
+    topic::data_status_t topic::read(genenral_data_t* data)
     {
         if(xSemaphoreTake(_semaphore, portMAX_DELAY) == pdTRUE)
         {
             if(!_valid)
             {
+                xSemaphoreGive(_semaphore);
                 return DATA_INVALID;
             }
             switch(_type)
             {
                 case UNSIGNED_INT:
-                    data.data_ui = _data.data_ui;
+                    data->data_ui = _data.data_ui;
                     break;
                 case SIGNED_INT:
-                    data.data_si = _data.data_si;
+                    data->data_si = _data.data_si;
                     break;
                 case FLOAT:
-                    data.data_f = _data.data_f;
+                    data->data_f = _data.data_f;
                     break;
             }
             xSemaphoreGive(_semaphore);
             return DATA_OK;
         }
+        
         return DATA_ERROR;
     };
 
@@ -149,10 +151,12 @@ namespace pyro
                 {
                     if(strcmp(_topics[i]->get_name(), name) == 0)
                     {
+                        xSemaphoreGive(_semaphore);
                         return i;
                     }
                 }
             }
+            xSemaphoreGive(_semaphore);
             return 0xFFFFFFFF;
         }
         return 0xFFFFFFFF;
@@ -182,7 +186,7 @@ namespace pyro
         
     }
 
-    topic::data_status_t databoard::read(uint32_t id, genenral_data_t& data,TickType_t& timestamp)
+    topic::data_status_t databoard::read(uint32_t id, genenral_data_t* data,TickType_t& timestamp)
     {
         if(id > DATABOARD_CHANNEL_COUNT)
         {
@@ -208,7 +212,7 @@ namespace pyro
         return topic::DATA_ERROR;
     }
 
-    topic::data_status_t databoard::write_topic(uint32_t id, genenral_data_t& data)
+    topic::data_status_t databoard::write_topic(uint32_t id, genenral_data_t data)
     {
         if(id > DATABOARD_CHANNEL_COUNT)
         {
