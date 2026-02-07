@@ -28,6 +28,7 @@ class axis_control_t
         float _target_rot;
 
         float _feedback_pos;
+        float _feedback_pos_offset;
         float _feedback_rot;
 
         float _control_value;
@@ -72,8 +73,16 @@ class axis_control_t
         void update() 
         {
             _motor->update_feedback();
-            _feedback_pos = _motor->get_current_position();
+            _feedback_pos = _motor->get_current_position()-_feedback_pos_offset;
             _feedback_rot = _motor->get_current_rotate();
+            if(_feedback_pos>PI)
+            {
+                _feedback_pos-=2*PI;
+            }
+            else if(_feedback_pos<-PI)
+            {
+                _feedback_pos+=2*PI;
+            }
         }
         inline float rot_angle_correction_pi(float feedback,float target,float max,float min)
         {
@@ -86,7 +95,7 @@ class axis_control_t
         }
         void control(float dt)
         {   
-            float control_value = 0.0f;
+            // _control_value = 0.0f;
             if(_constraint==CONSTRAINT)
             {
                 _target_rot=_pos_pid->calculate(_target_pos,_feedback_pos);
@@ -96,14 +105,17 @@ class axis_control_t
                 _target_rot = _pos_pid->calculate(rot_angle_correction_pi(_feedback_pos,_target_pos,PI,-PI),_feedback_pos);
                 // _target_rot=_pos_pid->calculate(_target_pos,_feedback_pos);
             }
-            control_value = _rot_pid->calculate(_target_rot,_feedback_rot);
-            _motor->send_torque(control_value);
+            _control_value = _rot_pid->calculate(_target_rot,_feedback_rot);
+            _motor->send_torque(_control_value);
         }
+        float get_position(){return _feedback_pos;}
         void enable_constraint(){_constraint=CONSTRAINT;}
         void disable_constraint(){_constraint=NO_CONSTRAINT;
          _upper_limit=pyro::PI;_lower_limit=-pyro::PI;}
         void set_upper_limit(float upper_limit){ _upper_limit=upper_limit;}
         void set_lower_limit(float lower_limit){_lower_limit=lower_limit;}
+
+        void set_feedback_pos_offset(float offset){_feedback_pos_offset=offset;}
     
 };
 };
@@ -154,8 +166,6 @@ control_mode_t control_mode=ZERO_FORCE;
 void engineer_arm_init()
 {
     dr16_drv =  pyro::rc_hub_t::get_instance(pyro::rc_hub_t::DR16);
-    // dr16_drv->init();
-    // dr16_drv->enable();
 
     pyro::pid_t *axis1_pos_pid = new pyro::pid_t(5,0.0,0.0,0.0,10);
     pyro::pid_t *axis1_rot_pid = new pyro::pid_t(2.2,0.0,0.0,0.0,20);
@@ -168,16 +178,17 @@ void engineer_arm_init()
     axis1->set_upper_limit(pyro::PI/2);
     axis1->set_lower_limit(-pyro::PI/2);
 
-    pyro::pid_t *axis2_pos_pid = new pyro::pid_t(15,0.1,0.0,5.0,45);
-    pyro::pid_t *axis2_rot_pid = new pyro::pid_t(13.2,0.3,0.01,5.0,40);
+    pyro::pid_t *axis2_pos_pid = new pyro::pid_t(11,0,0.05,20.0,45);
+    pyro::pid_t *axis2_rot_pid = new pyro::pid_t(13,0.4,0.03,20.0,54);
     axis2_motor = new pyro::dm_motor_drv_t(0x1, 0x0, pyro::can_hub_t::can1);
     axis2_motor->set_position_range(-pyro::PI, pyro::PI);
     axis2_motor->set_rotate_range(-45, 45); 
-    axis2_motor->set_torque_range(-40, 40);
+    axis2_motor->set_torque_range(-54, 54);
     axis2 = new pyro::axis_control_t(axis2_motor,axis2_pos_pid,axis2_rot_pid);
     axis2->enable_constraint();
     axis2->set_upper_limit(2.83);
     axis2->set_lower_limit(-0.1);
+    axis2->set_feedback_pos_offset(-0.046355);
 
     pyro::pid_t *axis3_pos_pid = new pyro::pid_t(10,0.0,0.0,0.0,20);
     pyro::pid_t *axis3_rot_pid = new pyro::pid_t(9,0.0,0.0,0.0,20);
@@ -189,6 +200,7 @@ void engineer_arm_init()
     axis3->enable_constraint();
     axis3->set_upper_limit(2.83);
     axis3->set_lower_limit(-0.01);
+    axis3->set_feedback_pos_offset(-0.010884);
 
     pyro::pid_t *axis4_pos_pid = new pyro::pid_t(6.7,1.2,0.0,6,15);
     pyro::pid_t *axis4_rot_pid = new pyro::pid_t(1.2,0.1,0.001,1,5);
@@ -200,6 +212,7 @@ void engineer_arm_init()
     axis4->enable_constraint();
     axis4->set_upper_limit(pyro::PI/2);
     axis4->set_lower_limit(-pyro::PI/2);
+    axis4->set_feedback_pos_offset(1.05362129);
 
 
     // pyro::pid_t *axis5_pos_pid = new pyro::pid_t(6.3,0,0.0,10,30);
@@ -215,14 +228,13 @@ void engineer_arm_init()
     axis5->enable_constraint();
     axis5->set_upper_limit(0.0);
     axis5->set_lower_limit(-0.66);
+    axis5->set_feedback_pos_offset(-0.0663935);
 
     axis6_pos_pid = new pyro::pid_t(9,0.0,0.0,0.0,20);
     axis6_rot_pid = new pyro::pid_t(0.12,0.1,0.0,1,3);
     axis6_motor =  new pyro::dji_gm_6020_motor_drv_t(pyro::dji_motor_tx_frame_t::register_id_t::id_1,pyro::can_hub_t::can3);
     axis6 = new pyro::axis_control_t(axis6_motor,axis6_pos_pid,axis6_rot_pid);
-    // axis6->enable_constraint();
-    // axis6->set_upper_limit(pyro::PI/2) ;
-    // axis6->set_lower_limit(-pyro::PI/2);
+    axis6->set_feedback_pos_offset(0.11121);
 
     end_motor = new pyro::dji_m2006_motor_drv_t(pyro::dji_motor_tx_frame_t::register_id_t::id_1,pyro::can_hub_t::can3);
 }
@@ -267,8 +279,6 @@ void enigneer_arm_update()
     axis4->update();
     axis5->update();
     axis6->update();
-    // axis6_feedback_pos=axis6_motor->get_current_position();
-    // axis6_feedback_rot=axis6_motor->get_current_rotate();
 }
 
 const  pyro::dr16_drv_t::dr16_ctrl_t *rc_data;
@@ -292,11 +302,6 @@ void engineer_arm_set_control()
             motor_target_pos[1]+=rc_data->rc.ch_lx*0.01;
             motor_target_pos[2]+=rc_data->rc.ch_ry*0.01;
             motor_target_pos[3]+=rc_data->rc.ch_rx*0.01;
-            // motor_target_pos[1]=rc_data->rc.pitch;
-            // motor_target_pos[2]=rc_data->rc.yaw;
-            // motor_target_pos[3]=rc_data->rc.throttle;
-            // motor_target_pos[4]=rc_data->rc.roll;
-            // motor_target_pos[5]=rc_data->rc.pitch;
 
         }
         else if(rc_data->rc.s_r.state == pyro::dr16_drv_t::sw_state_t::SW_DOWN)
@@ -311,16 +316,7 @@ void engineer_arm_set_control()
         axis4->set_target(motor_target_pos[3]);
         axis5->set_target(motor_target_pos[4]);
         axis6->set_target(motor_target_pos[5]);
-        
-        // if(motor_target_pos[5]<-pyro::PI)
-        // {
-            // motor_target_pos[5]+=2*pyro::PI;
-        // }
-        // else if(motor_target_pos[5]>pyro::PI)
-        // {
-            // motor_target_pos[5]-=2*pyro::PI;
-        // }
-        // axis6_target_pos=motor_target_pos[5];
+
         
     }
     else
@@ -349,18 +345,13 @@ void engineer_arm_control()
     axis1->control(0.005);
     axis2->control(0.005);
     axis3->control(0.005);
-    axis1_motor->send_torque(0);
-    axis2_motor->send_torque(0);
-    axis3_motor->send_torque(0);
+
 
     axis4->control(0.005);
     axis5->control(0.005);
     axis6->control(0.005);
 
     end_motor->send_torque(end_targat_torque);
-    // axis6_target_rot = axis6_pos_pid->calculate(axis6_target_pos,axis6_feedback_pos);
-    // axis6_target_torque = axis6_rot_pid->calculate(axis6_target_rot,axis6_feedback_rot);
-    // axis6_motor->send_torque(axis6_target_torque);
 }
 
 void engineer_arm_mission(void* args)
@@ -394,7 +385,6 @@ void engineer_arm_mission(void* args)
         {
             engineer_arm_control();
         }
-        // engineer_arm_zeroforce();
         vTaskDelay(1);
     }
 }
