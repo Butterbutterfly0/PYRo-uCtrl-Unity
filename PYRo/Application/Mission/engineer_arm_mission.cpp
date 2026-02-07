@@ -154,8 +154,8 @@ control_mode_t control_mode=ZERO_FORCE;
 void engineer_arm_init()
 {
     dr16_drv =  pyro::rc_hub_t::get_instance(pyro::rc_hub_t::DR16);
-    dr16_drv->init();
-    dr16_drv->enable();
+    // dr16_drv->init();
+    // dr16_drv->enable();
 
     pyro::pid_t *axis1_pos_pid = new pyro::pid_t(5,0.0,0.0,0.0,10);
     pyro::pid_t *axis1_rot_pid = new pyro::pid_t(2.2,0.0,0.0,0.0,20);
@@ -271,7 +271,7 @@ void enigneer_arm_update()
     // axis6_feedback_rot=axis6_motor->get_current_rotate();
 }
 
-const pyro::dr16_drv_t::dr16_ctrl_t *rc_data;
+const  pyro::dr16_drv_t::dr16_ctrl_t *rc_data;
 void engineer_arm_set_control()
 {
     rc_data = static_cast<const pyro::dr16_drv_t::dr16_ctrl_t *>(dr16_drv->read());

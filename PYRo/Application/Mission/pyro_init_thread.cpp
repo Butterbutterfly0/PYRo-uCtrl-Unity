@@ -1,12 +1,15 @@
 #include "pyro_can_drv.h"
 #include "pyro_rc_hub.h"
 #include "pyro_dwt_drv.h"
+#include "pyro_databoard.h"
 
 extern "C"
 {
     pyro::can_drv_t *can1_drv;
     pyro::can_drv_t *can2_drv;
     pyro::can_drv_t *can3_drv;
+
+    pyro::databoard *global_databoard;
 
     void pyro_init_thread(void *argument)
     {
@@ -34,6 +37,8 @@ extern "C"
         can1_drv->start();
         can2_drv->start();
         can3_drv->start();
+
+        global_databoard = new pyro::databoard();
 
         vTaskDelete(nullptr);
     }
