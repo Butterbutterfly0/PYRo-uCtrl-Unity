@@ -5,10 +5,15 @@
 #include "timers.h"
 #include "arm_pose_def.h"
 #include <string.h>
+#include "pyro_databoard.h"
+
+extern pyro::databoard* global_databoard;
 
 control_target_param_t *control_target_param;
 SemaphoreHandle_t rc_planning_sem;
 control_target_param_t *control_target_param_buffer ;
+
+static uint32_t selfcontrol_axis1_id,selfcontrol_axis2_id,selfcontrol_axis3_id,selfcontrol_axis4_id,selfcontrol_axis5_id,selfcontrol_axis6_id;
 
 typedef enum
 {
@@ -97,6 +102,19 @@ void arm_rc_resolve()
     last_sw_r_state = rc_data->rc.s_r.state;
 }
 
+float self_control_pos[6] ={0.0,0.0,0.0,0.0,0.0,0.0};;
+
+void arm_self_control_resolve()
+{
+    uint32_t timestamp;
+    global_databoard->read(selfcontrol_axis1_id,(pyro::genenral_data_t*)&(self_control_pos[0]),timestamp);
+    global_databoard->read(selfcontrol_axis2_id,(pyro::genenral_data_t*)&(self_control_pos[1]),timestamp);
+    global_databoard->read(selfcontrol_axis3_id,(pyro::genenral_data_t*)&(self_control_pos[2]),timestamp);
+    global_databoard->read(selfcontrol_axis4_id,(pyro::genenral_data_t*)&(self_control_pos[3]),timestamp);
+    global_databoard->read(selfcontrol_axis5_id,(pyro::genenral_data_t*)&(self_control_pos[4]),timestamp);
+    global_databoard->read(selfcontrol_axis6_id,(pyro::genenral_data_t*)&(self_control_pos[5]),timestamp);
+}
+
 void axis_transition_init(transition_param_t* param,float transition_period,float start_angle,float end_angle)
 {
     param->transition_start_pos = start_angle;
@@ -152,6 +170,11 @@ void arm_transition()
             time_spend = 1;
             arm_transition_init(&arm_transition_param, time_spend, control_target_param_buffer->axis_current_pos, arm_normal_pose);
             break;
+            case SELF_CONTROL_TRANSITION:
+            transition_state = Transition_running;
+            time_spend = 1;
+            arm_transition_init(&arm_transition_param, time_spend, control_target_param_buffer->axis_current_pos, self_control_pos);
+            break;
         }
     }
     else if(transition_state == Transition_running)
@@ -167,6 +190,9 @@ void arm_transition()
                 break;
                 case NORMAL_POSE_TRANSITION:
                 specific_control_mode = NORMAL_POSE;
+                break;
+                case SELF_CONTROL_TRANSITION:
+                specific_control_mode = SELF_CONTROL;
                 break;
             }
         }
@@ -191,8 +217,16 @@ void arm_planning_application()
             control_target_param->axis_target_pos[i] = arm_normal_pose[i];
         }
         break;
+        case SELF_CONTROL:
+        control_target_param->control_mode = POSITION_CONTROL;
+        for(int i=0;i<6;i++)
+        {
+            control_target_param->axis_target_pos[i] = self_control_pos[i];
+        }
+        break;
         case RESET_POSE_TRANSITION:
         case NORMAL_POSE_TRANSITION:
+        case SELF_CONTROL_TRANSITION:
         control_target_param->control_mode = POSITION_CONTROL;
         for(int i=0;i<6;i++)
         {
@@ -221,12 +255,25 @@ extern "C" void engineer_arm_planning_mission(void* args)
 
     dr16_drv =  pyro::rc_hub_t::get_instance(pyro::rc_hub_t::DR16);
 
+    while(global_databoard == nullptr)
+    {
+        vTaskDelay(1);
+    }
+
+    selfcontrol_axis1_id = global_databoard->get_topic_id("selfcontrol axis1");
+    selfcontrol_axis2_id = global_databoard->get_topic_id("selfcontrol axis2");
+    selfcontrol_axis3_id = global_databoard->get_topic_id("selfcontrol axis3");
+    selfcontrol_axis4_id = global_databoard->get_topic_id("selfcontrol axis4");
+    selfcontrol_axis5_id = global_databoard->get_topic_id("selfcontrol axis5");
+    selfcontrol_axis6_id = global_databoard->get_topic_id("selfcontrol axis6");
+
     for(;;)
     {
         xSemaphoreTake(rc_planning_sem, portMAX_DELAY);
         memcpy(control_target_param_buffer->axis_current_pos,control_target_param->axis_current_pos,sizeof(float)*6);
         xSemaphoreGive(rc_planning_sem);
         arm_rc_resolve();
+        arm_self_control_resolve();
         arm_transition();
         xSemaphoreTake(rc_planning_sem, portMAX_DELAY);
         arm_planning_application();

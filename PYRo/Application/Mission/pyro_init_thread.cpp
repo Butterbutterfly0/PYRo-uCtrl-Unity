@@ -40,6 +40,13 @@ extern "C"
 
         global_databoard = new pyro::databoard();
 
+        global_databoard->create_topic("selfcontrol axis1",pyro::data_type_t::FLOAT);
+        global_databoard->create_topic("selfcontrol axis2",pyro::data_type_t::FLOAT);
+        global_databoard->create_topic("selfcontrol axis3",pyro::data_type_t::FLOAT);
+        global_databoard->create_topic("selfcontrol axis4",pyro::data_type_t::FLOAT);
+        global_databoard->create_topic("selfcontrol axis5",pyro::data_type_t::FLOAT);
+        global_databoard->create_topic("selfcontrol axis6",pyro::data_type_t::FLOAT);
+
         vTaskDelete(nullptr);
     }
 }
