@@ -152,6 +152,8 @@ add_executable(${CMAKE_PROJECT_NAME}
         PYRo/Moudle/Chassis/Hybrid/pyro_hybrid_chassis.cpp
 
         PYRo/Application/Mission/engineer_arm_mission.cpp
+        PYRo/Application/Mission/engineer_arm_planning_mission.cpp
+        PYRo/Application/Mission/arm_pose_def.cpp
         PYRo/Application/Mission/interboard_communication_mission.cpp
         PYRo/Application/Mission/self_control_mission.cpp
 )
@@ -198,6 +200,8 @@ target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC
         PYRo/Moudle/Chassis/Mecanum
         PYRo/Moudle/Chassis/Rudder
         PYRo/Moudle/Chassis/Hybrid
+
+        PYRo/Application/Mission
 
 )
 

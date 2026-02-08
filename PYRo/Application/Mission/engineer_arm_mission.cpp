@@ -6,6 +6,7 @@
 #include "pyro_algo_pid.h"
 
 #include "pyro_rc_hub.h"
+#include "engineer_arm_planning_mission.h"
 
 extern "C" void engineer_arm_mission(void* args);
 namespace pyro
@@ -150,18 +151,14 @@ float motor_target_pos[7]={};
 float motor_current_rot[7]={};
 float motor_current_torque[7]={};
 
+float axis_current_pos[6]={};
+
 float end_targat_torque= 0;
 
 
-typedef enum
-{
-    ZERO_FORCE,
-    RESET_POSE,
-    RC_CONTROL
-}
-control_mode_t;
+control_mode_t control_mode;
 
-control_mode_t control_mode=ZERO_FORCE;
+
 
 void engineer_arm_init()
 {
@@ -226,7 +223,7 @@ void engineer_arm_init()
     axis5_motor->set_torque_range(-10, 10);
     axis5 = new pyro::axis_control_t(axis5_motor,axis5_pos_pid,axis5_rot_pid);
     axis5->enable_constraint();
-    axis5->set_upper_limit(0.0);
+    axis5->set_upper_limit(0.66);
     axis5->set_lower_limit(-0.66);
     axis5->set_feedback_pos_offset(-0.0663935);
 
@@ -279,54 +276,32 @@ void enigneer_arm_update()
     axis4->update();
     axis5->update();
     axis6->update();
+
+    axis_current_pos[0]=axis1->get_position();
+    axis_current_pos[1]=axis2->get_position();
+    axis_current_pos[2]=axis3->get_position();
+    axis_current_pos[3]=axis4->get_position();
+    axis_current_pos[4]=axis5->get_position();
+    axis_current_pos[5]=axis6->get_position();
+
+    xSemaphoreTake(rc_planning_sem, portMAX_DELAY);
+    memcpy(control_target_param->axis_current_pos,axis_current_pos,sizeof(float)*6);
+    xSemaphoreGive(rc_planning_sem);
 }
 
 const  pyro::dr16_drv_t::dr16_ctrl_t *rc_data;
 void engineer_arm_set_control()
 {
-    rc_data = static_cast<const pyro::dr16_drv_t::dr16_ctrl_t *>(dr16_drv->read());
-    if(rc_data->rc.s_r.state == pyro::dr16_drv_t::sw_state_t::SW_DOWN||rc_data->rc.s_r.state == pyro::dr16_drv_t::sw_state_t::SW_MID)
-    {
-        control_mode = RC_CONTROL;
-    }
-    else if(rc_data->rc.s_r.state == pyro::dr16_drv_t::sw_state_t::SW_UP)
-    {
-        control_mode = ZERO_FORCE;
-    } 
-
-    if(control_mode==RC_CONTROL)
-    {
-        if(rc_data->rc.s_r.state == pyro::dr16_drv_t::sw_state_t::SW_MID)
-        {
-            motor_target_pos[0]+=rc_data->rc.ch_ly*0.01;
-            motor_target_pos[1]+=rc_data->rc.ch_lx*0.01;
-            motor_target_pos[2]+=rc_data->rc.ch_ry*0.01;
-            motor_target_pos[3]+=rc_data->rc.ch_rx*0.01;
-
-        }
-        else if(rc_data->rc.s_r.state == pyro::dr16_drv_t::sw_state_t::SW_DOWN)
-        {
-            motor_target_pos[4]+=rc_data->rc.ch_ly*0.001;
-            motor_target_pos[5]+=rc_data->rc.ch_lx*0.01;
-        }
-        end_targat_torque = rc_data->rc.wheel*1;
-        axis1->set_target(motor_target_pos[0]);
-        axis2->set_target(motor_target_pos[1]);
-        axis3->set_target(motor_target_pos[2]);
-        axis4->set_target(motor_target_pos[3]);
-        axis5->set_target(motor_target_pos[4]);
-        axis6->set_target(motor_target_pos[5]);
-
-        
-    }
-    else
-    {
-        for(int i=0;i<7;i++)
-        {
-            motor_target_pos[i]=0;
-        }
-    }
-
+    xSemaphoreTake(rc_planning_sem, portMAX_DELAY);
+    control_mode = control_target_param->control_mode;
+    axis1->set_target(control_target_param->axis_target_pos[0]);
+    axis2->set_target(control_target_param->axis_target_pos[1]);
+    axis3->set_target(control_target_param->axis_target_pos[2]);
+    axis4->set_target(control_target_param->axis_target_pos[3]);
+    axis5->set_target(control_target_param->axis_target_pos[4]);
+    axis6->set_target(control_target_param->axis_target_pos[5]);
+    end_targat_torque = control_target_param->end_target_torque;
+    xSemaphoreGive(rc_planning_sem);
 }
 
 void engineer_arm_zeroforce()
@@ -345,12 +320,9 @@ void engineer_arm_control()
     axis1->control(0.005);
     axis2->control(0.005);
     axis3->control(0.005);
-
-
     axis4->control(0.005);
     axis5->control(0.005);
     axis6->control(0.005);
-
     end_motor->send_torque(end_targat_torque);
 }
 
@@ -381,7 +353,7 @@ void engineer_arm_mission(void* args)
         {
             engineer_arm_zeroforce();
         }
-        else if(control_mode==RC_CONTROL)
+        else if(control_mode==POSITION_CONTROL)
         {
             engineer_arm_control();
         }
