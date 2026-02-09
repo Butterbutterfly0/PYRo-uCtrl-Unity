@@ -388,9 +388,7 @@ void joint_cali_control()
 
 void joint_normal_control()
 {
-    // left_side_joint_control
-    // left_side_joint_motor_drv->send_torque(0);
-    // right_side_joint_motor_drv->send_torque(0);
+
     left_side_joint_control->update();
     right_side_joint_control->update();
     left_side_joint_control->control(0.01f);
