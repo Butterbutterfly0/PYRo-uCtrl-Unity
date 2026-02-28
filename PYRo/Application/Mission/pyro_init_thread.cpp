@@ -2,7 +2,7 @@
 #include "pyro_rc_hub.h"
 #include "pyro_dwt_drv.h"
 #include "pyro_ins.h"
-#include "pyro_supercap_drv.h"
+// #include "pyro_supercap_drv.h"
 
 namespace pyro
 {
@@ -43,9 +43,9 @@ extern "C"
         ins_drv = ins_drv_t::get_instance();
         ins_drv->init();
 
-        supercap_drv_t::get_instance()->start_rx();
+        // supercap_drv_t::get_instance()->start_rx();
 
-        vTaskDelete(nullptr);
+        // vTaskDelete(nullptr);
     }
 }
 } // namespace pyro

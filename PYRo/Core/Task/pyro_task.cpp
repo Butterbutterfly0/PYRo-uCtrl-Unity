@@ -79,7 +79,7 @@ status_t task_base_t::init_entry_point(void *arg)
                         &self->_loop_task_handle);
         }
     }
-    return status_t::PYRO_ERROR;
+    return status_t::PYRO_OK;
 }
 
 /**
