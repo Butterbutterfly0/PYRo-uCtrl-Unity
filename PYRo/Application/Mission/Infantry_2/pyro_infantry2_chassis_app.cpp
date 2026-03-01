@@ -2,7 +2,7 @@
  * @Author: vod vod_x@outlook.com
  * @Date: 2026-02-26 20:18:33
  * @LastEditors: vod vod_x@outlook.com
- * @LastEditTime: 2026-02-28 02:33:13
+ * @LastEditTime: 2026-03-01 15:36:59
  * @Description: 
  * 
  * Copyright (c) 2026 by PeiYangRobot, All Rights Reserved. 
@@ -31,7 +31,7 @@ void infantry2_chassis_rc2cmd(void const *rc_ctrl)
         infantry2_chassis_cmd_ptr->r_angle = 0;
         infantry2_chassis_cmd_ptr->l_leg = 0;
         infantry2_chassis_cmd_ptr->r_leg = 0;
-        infantry2_chassis_cmd_ptr->mode = pyro::cmd_base_t::mode_t::ZERO_FORCE;
+        infantry2_chassis_cmd_ptr->mode = pyro::cmd_base_t::mode_t::PASSIVE;
         return;
     }
     infantry2_chassis_cmd_ptr->l_leg = (p_ctrl->rc.ch_ly + 1.0f) / 14.0f + 0.15f;

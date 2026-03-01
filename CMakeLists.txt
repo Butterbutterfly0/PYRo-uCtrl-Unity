@@ -82,6 +82,7 @@ add_executable(${CMAKE_PROJECT_NAME}
         PYRo/Algorithm/Kinematics/pyro_kin_hybrid.cpp
         PYRo/Algorithm/Kinematics/pyro_kin_mec.cpp
         PYRo/Algorithm/Kinematics/pyro_kin_rudder.cpp
+        PYRo/Algorithm/Kinematics/pyro_kin_wl.cpp
         PYRo/Algorithm/OLS/pyro_algo_ols.cpp
         PYRo/Algorithm/PID/pyro_algo_pid.cpp
         PYRo/Algorithm/EKF/QuaternionEKF.cpp
@@ -102,37 +103,13 @@ add_executable(${CMAKE_PROJECT_NAME}
         PYRo/Component/Referee/fifo.c
         PYRo/Component/Referee/pyro_referee.cpp
         PYRo/Component/INS/pyro_ins.cpp
-        # PYRo/Component/Supercap/pyro_supercap_drv.cpp
+        PYRo/Component/Supercap/pyro_supercap_drv.cpp
 
-        # --- Module ---
-        PYRo/Module
-        #        PYRo/Module/Chassis/Hybrid/pyro_hybrid_chassis.cpp
-        # PYRo/Module/Chassis/Rudder/pyro_rud_chassis.cpp
-        # PYRo/Module/Chassis/Rudder/fsm/pyro_rud_active_state.cpp
-        # PYRo/Module/Chassis/Rudder/fsm/pyro_rud_passive_state.cpp
-        # PYRo/Module/Chassis/Rudder/fsm/pyro_rud_moving_state.cpp
-        # PYRo/Module/Chassis/Rudder/fsm/pyro_rud_braking_state.cpp
-        # PYRo/Module/Chassis/Rudder/fsm/pyro_rud_turning_state.cpp
-        PYRo/Module/pyro_module_base.cpp
-        # PYRo/Module/Yaw/pyro_yaw.cpp
-        # PYRo/Module/Yaw/fsm/pyro_yaw_passive_state.cpp
-        # PYRo/Module/Yaw/fsm/pyro_yaw_active_state.cpp
-#        PYRo/Module/Chassis/Rudder/pyro_rud_chassis.cpp
-#        PYRo/Module/Chassis/Rudder/fsm/pyro_rud_active_state.cpp
-#        PYRo/Module/Chassis/Rudder/fsm/pyro_rud_passive_state.cpp
-#        PYRo/Module/Chassis/Rudder/fsm/pyro_rud_moving_state.cpp
-#        PYRo/Module/Chassis/Rudder/fsm/pyro_rud_braking_state.cpp
-#        PYRo/Module/Chassis/Rudder/fsm/pyro_rud_turning_state.cpp
-#        PYRo/Module/pyro_module_base.cpp
-#        PYRo/Module/Yaw/pyro_yaw.cpp
-#        PYRo/Module/Yaw/fsm/pyro_yaw_passive_state.cpp
-#        PYRo/Module/Yaw/fsm/pyro_yaw_active_state.cpp
 
         # --- Application ---
+
         ## --- Demo ---
         PYRo/Application/Demo/demo_task.cpp
-#        PYRo/Application/Demo/pyro_control_demo.cpp
-#        PYRo/Application/Demo/pyro_controller_demo.cpp
         PYRo/Application/Demo/pyro_motor_demo.cpp
         PYRo/Application/Demo/pyro_rc_demo.cpp
         PYRo/Application/Demo/pyro_shoot_demo.cpp
@@ -140,39 +117,6 @@ add_executable(${CMAKE_PROJECT_NAME}
         ## --- Mission ---
         PYRo/Application/Mission/pyro_init_thread.cpp
         PYRo/Application/Mission/pyro_mission_planer.cpp
-        ### --- Hero ---
-        #        PYRo/Application/Mission/Hero/pyro_gimbal_app.cpp
-        #        PYRo/Application/Mission/Hero/pyro_booster_app.cpp
-        ### --- Infantry2 ---
-        PYRo/Application/Mission/Infantry_2/pyro_infantry2_chassis_app.cpp
-        PYRo/Application/Mission/Infantry_2/pyro_infantry2_chassis_cfg.cpp
-
-
-        # --- Module ---
-        PYRo/Module/pyro_module_base.tpp
-
-        ## --- Chassis ---
-        #        PYRo/Module/Chassis/Mecanum/pyro_mec_chassis.cpp
-        #        PYRo/Module/Chassis/Mecanum/fsm/pyro_mec_passive_state.cpp
-        #        PYRo/Module/Chassis/Mecanum/fsm/pyro_mec_active_state.cpp
-
-        ## --- Gimbal ---
-        #        PYRo/Module/Gimbal/Hero/Direct/pyro_direct_gimbal.cpp
-        #        PYRo/Module/Gimbal/Hero/Direct/fsm/pyro_direct_active_state.cpp
-        #        PYRo/Module/Gimbal/Hero/Direct/fsm/pyro_direct_passive_state.cpp
-
-        ## --- Booster ---
-        # PYRo/Module/Booster/Quad/pyro_quad_booster.cpp
-        # PYRo/Module/Booster/Quad/fsm/pyro_quad_passive_state.cpp
-        # PYRo/Module/Booster/Quad/fsm/pyro_quad_active_state.cpp
-        # PYRo/Module/Booster/Quad/fsm/pyro_quad_homing_state.cpp
-        # PYRo/Module/Booster/Quad/fsm/pyro_quad_ready_state.cpp
-
-        PYRo/Module/Chassis/Wheel_Legged/pyro_wl_chassis.cpp
-        PYRo/Module/Chassis/Wheel_Legged/fsm/pyro_wl_passive_state.cpp
-        PYRo/Module/Chassis/Wheel_Legged/fsm/pyro_wl_active_state/pyro_wl_active_state.cpp
-        PYRo/Module/Chassis/Wheel_Legged/fsm/pyro_wl_active_state/pyro_wl_test_state.cpp
-        PYRo/Module/Chassis/Wheel_Legged/fsm/pyro_wl_active_state/pyro_wl_normal_state.cpp
 
         # --- Debug ---
         PYRo/Debug/Debug_task.cpp
@@ -188,85 +132,17 @@ add_executable(${CMAKE_PROJECT_NAME}
         # --- Device ---
         PYRo/Device/BMI088/BMI088_driver.cpp
         PYRo/Device/BMI088/BMI088_middleware.cpp
-#        PYRo/Module/Chassis/Rudder/fsm/pyro_rud_moving_state.cpp
-#        PYRo/Module/Chassis/Rudder/fsm/pyro_rud_braking_state.cpp
-#        PYRo/Module/Chassis/Rudder/fsm/pyro_rud_turning_state.cpp
-
 
 
 )
 if (ROBOT_ID EQUAL HERO_ID)
-    target_sources(${CMAKE_PROJECT_NAME} PRIVATE
-
-            PYRo/Module/Booster/Quad_pink/pyro_quad_booster.cpp
-            PYRo/Module/Booster/Quad_pink/fsm/pyro_quad_passive_state.cpp
-            PYRo/Module/Booster/Quad_pink/fsm/pyro_quad_active_state.cpp
-            PYRo/Module/Booster/Quad_pink/fsm/pyro_quad_homing_state.cpp
-            PYRo/Module/Booster/Quad_pink/fsm/pyro_quad_ready_state.cpp
-            PYRo/Module/Booster/Quad_pink/fsm/pyro_quad_stall_state.cpp
-            PYRo/Module/Booster/Quad_pink/fsm/pyro_quad_interim_state.cpp
-            PYRo/Module/Booster/Quad_pink/fsm/pyro_quad_busy_state.cpp
-
-            PYRo/Module/Gimbal/Hero/Direct/pyro_direct_gimbal.cpp
-            PYRo/Module/Gimbal/Hero/Direct/fsm/pyro_direct_active_state.cpp
-            PYRo/Module/Gimbal/Hero/Direct/fsm/pyro_direct_passive_state.cpp
-
-            PYRo/Module/Chassis/Mecanum/pyro_mec_chassis.cpp
-            PYRo/Module/Chassis/Mecanum/fsm/pyro_mec_passive_state.cpp
-            PYRo/Module/Chassis/Mecanum/fsm/pyro_mec_active_state.cpp
-
-            PYRo/Application/Mission/Hero/pyro_chassis_app.cpp
-            PYRo/Application/Mission/Hero/pyro_gimbal_app.cpp
-            PYRo/Application/Mission/Hero/pyro_booster_app.cpp
-    )
-    target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC
-            PYRo/Module/Booster/Quad_pink
-            PYRo/Module/Gimbal/Hero/Direct
-            PYRo/Module/Chassis/Mecanum
-    )
+    include(${CMAKE_CURRENT_SOURCE_DIR}/PYRo/cmake/target/hero_target.cmake)
 elseif (ROBOT_ID EQUAL SUB_HERO_ID)
-    target_sources(${CMAKE_PROJECT_NAME} PRIVATE
-            PYRo/Application/Mission/Hero_hybrid/pyro_chassis_app.cpp
-            PYRo/Application/Mission/Hero_hybrid/pyro_booster_app.cpp
-
-            PYRo/Module/Booster/Quad_tango/pyro_quad_booster.cpp
-            PYRo/Module/Booster/Quad_tango/fsm/pyro_quad_passive_state.cpp
-            PYRo/Module/Booster/Quad_tango/fsm/pyro_quad_active_state.cpp
-            PYRo/Module/Booster/Quad_tango/fsm/pyro_quad_homing_state.cpp
-            PYRo/Module/Booster/Quad_tango/fsm/pyro_quad_ready_state.cpp
-            PYRo/Module/Booster/Quad_tango/fsm/pyro_quad_stall_state.cpp
-            PYRo/Module/Booster/Quad_tango/fsm/pyro_quad_interim_state.cpp
-            PYRo/Module/Booster/Quad_tango/fsm/pyro_quad_busy_state.cpp
-
-            PYRo/Module/Chassis/Hybrid/pyro_hybrid_chassis.cpp
-            PYRo/Module/Chassis/Hybrid/fsm/pyro_hybrid_active_state.cpp
-            PYRo/Module/Chassis/Hybrid/fsm/pyro_hybrid_passive_state.cpp
-            PYRo/Module/Chassis/Hybrid/fsm/pyro_hybrid_cruising_state.cpp
-            PYRo/Module/Chassis/Hybrid/fsm/pyro_hybrid_climbing_state.cpp
-    )
-    target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC
-            PYRo/Module/Booster/Quad_tango
-            PYRo/Module/Chassis/Hybrid
-    )
+    include(${CMAKE_CURRENT_SOURCE_DIR}/PYRo/cmake/target/sub_hero_target.cmake)
+elseif(ROBOT_ID EQUAL INFANTRY2_ID)
+    include(${CMAKE_CURRENT_SOURCE_DIR}/PYRo/cmake/target/infantry2_target.cmake)
 elseif(ROBOT_ID EQUAL SENTRY_ID)
-    target_sources(${CMAKE_PROJECT_NAME} PRIVATE
-            PYRo/Application/Mission/Sentry/pyro_sentry_chassis_app.cpp
-
-            PYRo/Module/Chassis/Rudder/pyro_rud_chassis.cpp
-            PYRo/Module/Chassis/Rudder/fsm/pyro_rud_active_state.cpp
-            PYRo/Module/Chassis/Rudder/fsm/pyro_rud_passive_state.cpp
-            PYRo/Module/Chassis/Rudder/fsm/pyro_rud_moving_state.cpp
-            PYRo/Module/Chassis/Rudder/fsm/pyro_rud_braking_state.cpp
-            PYRo/Module/Chassis/Rudder/fsm/pyro_rud_turning_state.cpp           
-            
-            PYRo/Module/Yaw/pyro_yaw.cpp
-            PYRo/Module/Yaw/fsm/pyro_yaw_passive_state.cpp
-            PYRo/Module/Yaw/fsm/pyro_yaw_active_state.cpp
-    )
-    target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC
-            PYRo/Module/Chassis/Rudder
-            PYRo/Module/Yaw
-    )
+    include(${CMAKE_CURRENT_SOURCE_DIR}/PYRo/cmake/target/sentry_target.cmake)
 endif ()
 
 add_subdirectory(cmake/stm32cubemx)
@@ -314,10 +190,8 @@ target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC
 
         # --- Module ---
         PYRo/Module
-#        PYRo/Module/Chassis/Rudder
-#        PYRo/Module/Chassis/Wheel_Legged
-        PYRo/Module/Yaw
 
+            # PYRo/Module/Chassis/Wheel_Legged
         # --- Communication ---
         PYRo/Communication
 

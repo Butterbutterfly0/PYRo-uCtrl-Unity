@@ -2,7 +2,7 @@
  * @Author: Vod vod0575@outlook
  * @Date: 2026-02-06 15:27:37
  * @LastEditors: vod vod_x@outlook.com
- * @LastEditTime: 2026-02-28 02:12:49
+ * @LastEditTime: 2026-03-01 15:41:26
  * @Description: 
  * 
  * Copyright (c) 2026 by PeiYangRobot, All Rights Reserved. 
@@ -23,40 +23,40 @@ status_t wl_chassis_t::_init()
     status_t ret;
 
     /* Initialize kinematic solver with given coefficients. */
-    ret = _kinematic_solver.init(&_config.phi_k, 
-             &_config.polar_k, &_config.vmc_k);
+    ret = _kinematic_solver.init(&_module_deps.phi_k, 
+             &_module_deps.polar_k, &_module_deps.vmc_k);
     CHECK_PYRO_RET(ret);
     /* Save LQR coefficients */
-    memcpy(_lqr_cof, _config.lqr_coef, sizeof(float) * 36);
+    memcpy(_lqr_cof, _module_deps.lqr_coef, sizeof(float) * 36);
 
     /* Save wheel radius and reduction ratio */
-    _wheel_radius = _config.wheel_radius;
-    _reduction_ratio = _config.reduction_ratio;
+    _wheel_radius = _module_deps.wheel_radius;
+    _reduction_ratio = _module_deps.reduction_ratio;
 
     /* Initialize joint motor driver */
     for(uint8_t i = 0; i < 4; i++)
     {
-        _motor_drv[i] = new dm_motor_drv_t(_config.joint_motor_cfg[i].tx_id,
-                                           _config.joint_motor_cfg[i].rx_id,
-                                           _config.joint_motor_cfg[i].can);
+        _motor_drv[i] = new dm_motor_drv_t(_module_deps.joint_motor_cfg[i].tx_id,
+                                           _module_deps.joint_motor_cfg[i].rx_id,
+                                           _module_deps.joint_motor_cfg[i].can);
         if(!_motor_drv[i])
         {
             return PYRO_NO_MEMORY;
         }
-        _motor_offset[i] = _config.joint_motor_cfg[i].offset_angle;
-        _motor_drv[i]->set_rotate_range(_config.rotate_min, 
-                                                  _config.rotate_max);
-        _motor_drv[i]->set_position_range(_config.position_min,
-                                                  _config.position_max);
-        _motor_drv[i]->set_torque_range(_config.torque_min,
-                                                  _config.torque_max);
+        _motor_offset[i] = _module_deps.joint_motor_cfg[i].offset_angle;
+        _motor_drv[i]->set_rotate_range(_module_deps.rotate_min, 
+                                                  _module_deps.rotate_max);
+        _motor_drv[i]->set_position_range(_module_deps.position_min,
+                                                  _module_deps.position_max);
+        _motor_drv[i]->set_torque_range(_module_deps.torque_min,
+                                                  _module_deps.torque_max);
     }
     /* Initialize wheel motor driver */
     for(uint8_t i = 0; i < 2; i++)
     {
         _wheel_drv[i] = 
-               new dji_m3508_motor_drv_t(_config.wheel_motor_cfg[i].tx_id,
-                                     _config.wheel_motor_cfg[i].can);
+               new dji_m3508_motor_drv_t(_module_deps.wheel_motor_cfg[i].tx_id,
+                                     _module_deps.wheel_motor_cfg[i].can);
         if(!_wheel_drv[i])
         {
             return PYRO_NO_MEMORY;
@@ -71,18 +71,18 @@ status_t wl_chassis_t::_init()
     /* Initialize PID controllers */
     for(uint8_t i = 0; i < 2; i++)
     {
-        _T_pid[i] = new pid_t(_config.T_pid_cfg[i].kp, _config.T_pid_cfg[i].ki, 
-                            _config.T_pid_cfg[i].kd, 
-                            _config.T_pid_cfg[i].integral_limit,
-                            _config.T_pid_cfg[i].max_out);
+        _T_pid[i] = new pid_t(_module_deps.T_pid_cfg[i].kp, _module_deps.T_pid_cfg[i].ki, 
+                            _module_deps.T_pid_cfg[i].kd, 
+                            _module_deps.T_pid_cfg[i].integral_limit,
+                            _module_deps.T_pid_cfg[i].max_out);
         if(!_T_pid[i])
         {
             return PYRO_NO_MEMORY;
         }
-        _F_pid[i] = new pid_t(_config.F_pid_cfg[i].kp, _config.F_pid_cfg[i].ki, 
-                            _config.F_pid_cfg[i].kd, 
-                            _config.F_pid_cfg[i].integral_limit,
-                            _config.F_pid_cfg[i].max_out);
+        _F_pid[i] = new pid_t(_module_deps.F_pid_cfg[i].kp, _module_deps.F_pid_cfg[i].ki, 
+                            _module_deps.F_pid_cfg[i].kd, 
+                            _module_deps.F_pid_cfg[i].integral_limit,
+                            _module_deps.F_pid_cfg[i].max_out);
         if(!_F_pid[i])        
         {
             return PYRO_NO_MEMORY;
@@ -169,7 +169,7 @@ void wl_chassis_t::_update_feedback()
 void wl_chassis_t::_fsm_execute()
 {
     _cmd = &_current_cmd;
-    if (cmd_base_t::mode_t::ZERO_FORCE == _cmd->mode)
+    if (cmd_base_t::mode_t::PASSIVE == _cmd->mode)
         _fsm.change_state(&_state_passive)  ;
     else if (cmd_base_t::mode_t::ACTIVE == _cmd->mode)
         _fsm.change_state(&_state_active);
