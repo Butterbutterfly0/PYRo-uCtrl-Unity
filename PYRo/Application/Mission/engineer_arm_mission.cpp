@@ -141,10 +141,10 @@ pyro::dm_motor_drv_t *axis5_motor;
 pyro::axis_control_t *axis6;
 pyro::pid_t *axis6_pos_pid ;
 pyro::pid_t *axis6_rot_pid ;
-pyro::dji_gm_6020_motor_drv_t *axis6_motor;
+pyro::dm_motor_drv_t *axis6_motor;
 float axis6_target_pos,axis6_target_rot,axis6_target_torque,axis6_feedback_pos,axis6_feedback_rot;
 
-pyro::dji_m2006_motor_drv_t *end_motor;
+pyro::dm_motor_drv_t *end_motor;
 
 float motor_current_pos[7]={};
 float motor_target_pos[7]={};
@@ -164,76 +164,86 @@ void engineer_arm_init()
 {
     dr16_drv =  pyro::rc_hub_t::get_instance(pyro::rc_hub_t::DR16);
 
-    pyro::pid_t *axis1_pos_pid = new pyro::pid_t(5,0.0,0.0,0.0,10);
-    pyro::pid_t *axis1_rot_pid = new pyro::pid_t(2.2,0.0,0.0,0.0,20);
-    axis1_motor = new pyro::dm_motor_drv_t(0x7, 0x6, pyro::can_hub_t::can1);
+    pyro::pid_t *axis1_pos_pid = new pyro::pid_t(10,0.0,0.0,0.0,52);
+    pyro::pid_t *axis1_rot_pid = new pyro::pid_t(8.8,0.0,0.0,0.0,27);
+    axis1_motor = new pyro::dm_motor_drv_t(0x2, 0x1, pyro::can_hub_t::can1);
     axis1_motor->set_position_range(-pyro::PI, pyro::PI);
-    axis1_motor->set_rotate_range(-10, 10); 
-    axis1_motor->set_torque_range(-28, 28);
+    axis1_motor->set_rotate_range(-52, 52); 
+    axis1_motor->set_torque_range(-27, 27);
     axis1 = new pyro::axis_control_t(axis1_motor,axis1_pos_pid,axis1_rot_pid);
     axis1->enable_constraint();
-    axis1->set_upper_limit(pyro::PI/2);
+    axis1->set_upper_limit(0.117543131);
     axis1->set_lower_limit(-pyro::PI/2);
+    axis1->set_feedback_pos_offset(0.4682);
 
-    pyro::pid_t *axis2_pos_pid = new pyro::pid_t(11,0,0.05,20.0,45);
-    pyro::pid_t *axis2_rot_pid = new pyro::pid_t(13,0.4,0.03,20.0,54);
-    axis2_motor = new pyro::dm_motor_drv_t(0x1, 0x0, pyro::can_hub_t::can1);
+    pyro::pid_t *axis2_pos_pid = new pyro::pid_t(11,0.4,0.0,20.0,150);
+    pyro::pid_t *axis2_rot_pid = new pyro::pid_t(30,2.4,0.0,20.0,150);
+    axis2_motor = new pyro::dm_motor_drv_t(0x4, 0x3, pyro::can_hub_t::can1);
     axis2_motor->set_position_range(-pyro::PI, pyro::PI);
-    axis2_motor->set_rotate_range(-45, 45); 
-    axis2_motor->set_torque_range(-54, 54);
+    axis2_motor->set_rotate_range(-150, 150); 
+    axis2_motor->set_torque_range(-150, 150);
     axis2 = new pyro::axis_control_t(axis2_motor,axis2_pos_pid,axis2_rot_pid);
     axis2->enable_constraint();
     axis2->set_upper_limit(2.83);
-    axis2->set_lower_limit(-0.1);
-    axis2->set_feedback_pos_offset(-0.046355);
+    axis2->set_lower_limit(-0.8);
+    axis2->set_feedback_pos_offset(-2.3022);
 
-    pyro::pid_t *axis3_pos_pid = new pyro::pid_t(10,0.0,0.0,0.0,20);
-    pyro::pid_t *axis3_rot_pid = new pyro::pid_t(9,0.0,0.0,0.0,20);
-    axis3_motor = new pyro::dm_motor_drv_t(0x3, 0x2, pyro::can_hub_t::can1);
+    pyro::pid_t *axis3_pos_pid = new pyro::pid_t(10,0.0,0.0,0.0,160);
+    pyro::pid_t *axis3_rot_pid = new pyro::pid_t(13,0.0,0.0,0.0,40);
+    axis3_motor = new pyro::dm_motor_drv_t(0x6, 0x5, pyro::can_hub_t::can3);
     axis3_motor->set_position_range(-pyro::PI, pyro::PI);
-    axis3_motor->set_rotate_range(-20, 20); 
-    axis3_motor->set_torque_range(-20, 20);
+    axis3_motor->set_rotate_range(-160, 160); 
+    axis3_motor->set_torque_range(-40, 40);
     axis3 = new pyro::axis_control_t(axis3_motor,axis3_pos_pid,axis3_rot_pid);
     axis3->enable_constraint();
     axis3->set_upper_limit(2.83);
-    axis3->set_lower_limit(-0.01);
-    axis3->set_feedback_pos_offset(-0.010884);
+    axis3->set_lower_limit(-0.8);
+    axis3->set_feedback_pos_offset(-0.2162);
 
-    pyro::pid_t *axis4_pos_pid = new pyro::pid_t(6.7,1.2,0.0,6,15);
-    pyro::pid_t *axis4_rot_pid = new pyro::pid_t(1.2,0.1,0.001,1,5);
-    axis4_motor = new pyro::dm_motor_drv_t(0x5, 0x4, pyro::can_hub_t::can2);
+    pyro::pid_t *axis4_pos_pid = new pyro::pid_t(15.7,1.2,0.0,6,200);
+    pyro::pid_t *axis4_rot_pid = new pyro::pid_t(1.0,0.2,0.001,3,7);
+    axis4_motor = new pyro::dm_motor_drv_t(0x8, 0x7, pyro::can_hub_t::can3);
     axis4_motor->set_position_range(-pyro::PI, pyro::PI);
-    axis4_motor->set_rotate_range(-20, 20); 
-    axis4_motor->set_torque_range(-10, 10);
+    axis4_motor->set_rotate_range(-200, 200); 
+    axis4_motor->set_torque_range(-7, 7);
     axis4 = new pyro::axis_control_t(axis4_motor,axis4_pos_pid,axis4_rot_pid);
     axis4->enable_constraint();
     axis4->set_upper_limit(pyro::PI/2);
     axis4->set_lower_limit(-pyro::PI/2);
-    axis4->set_feedback_pos_offset(1.05362129);
+    axis4->set_feedback_pos_offset(0.2961);
 
 
     // pyro::pid_t *axis5_pos_pid = new pyro::pid_t(6.3,0,0.0,10,30);
     // pyro::pid_t *axis5_rot_pid = new pyro::pid_t(1.0,0.1,0.00,4,8);
 
-    pyro::pid_t *axis5_pos_pid = new pyro::pid_t(10.3,0.2,0.0,10,30);
-    pyro::pid_t *axis5_rot_pid = new pyro::pid_t(1.0,0.1,0.00,4,8);
-    axis5_motor = new pyro::dm_motor_drv_t(0x8, 0x9, pyro::can_hub_t::can2);
+    pyro::pid_t *axis5_pos_pid = new pyro::pid_t(10.3,0.2,0.0,10,200);
+    pyro::pid_t *axis5_rot_pid = new pyro::pid_t(1.2,0.3,0.00,4,7);
+    axis5_motor = new pyro::dm_motor_drv_t(0xA, 0x9, pyro::can_hub_t::can2);
     axis5_motor->set_position_range(-pyro::PI, pyro::PI);
-    axis5_motor->set_rotate_range(-30, 30); 
-    axis5_motor->set_torque_range(-10, 10);
+    axis5_motor->set_rotate_range(-200, 200); 
+    axis5_motor->set_torque_range(-7, 7);
     axis5 = new pyro::axis_control_t(axis5_motor,axis5_pos_pid,axis5_rot_pid);
     axis5->enable_constraint();
     axis5->set_upper_limit(0.66);
     axis5->set_lower_limit(-0.66);
-    axis5->set_feedback_pos_offset(-0.0663935);
+    axis5->set_feedback_pos_offset(1.8395);
 
-    axis6_pos_pid = new pyro::pid_t(9,0.0,0.0,0.0,20);
-    axis6_rot_pid = new pyro::pid_t(0.12,0.1,0.0,1,3);
-    axis6_motor =  new pyro::dji_gm_6020_motor_drv_t(pyro::dji_motor_tx_frame_t::register_id_t::id_1,pyro::can_hub_t::can3);
+    axis6_pos_pid = new pyro::pid_t(9,0.0,0.0,0.0,200);
+    axis6_rot_pid = new pyro::pid_t(0.8,0.1,0.0,1,7);
+    axis6_motor = new pyro::dm_motor_drv_t(0xC, 0xB, pyro::can_hub_t::can2);
+    axis6_motor->set_position_range(-pyro::PI, pyro::PI);
+    axis6_motor->set_rotate_range(-200, 200); 
+    axis6_motor->set_torque_range(-7, 7);
     axis6 = new pyro::axis_control_t(axis6_motor,axis6_pos_pid,axis6_rot_pid);
-    axis6->set_feedback_pos_offset(0.11121);
+    axis6->enable_constraint();
+    axis6->set_upper_limit(pyro::PI/2);
+    axis6->set_lower_limit(-pyro::PI/2);
+    axis6->set_feedback_pos_offset(2.9030);
 
-    end_motor = new pyro::dji_m2006_motor_drv_t(pyro::dji_motor_tx_frame_t::register_id_t::id_1,pyro::can_hub_t::can3);
+    end_motor = new pyro::dm_motor_drv_t(0xE, 0xD, pyro::can_hub_t::can2);
+    end_motor->set_position_range(-pyro::PI, pyro::PI);
+    end_motor->set_rotate_range(-200, 200); 
+    end_motor->set_torque_range(-7, 7);
 }
 
 void enigneer_arm_update()
@@ -319,11 +329,13 @@ void engineer_arm_control()
 {
     axis1->control(0.005);
     axis2->control(0.005);
+    // axis3_motor->send_torque(0);
+    // axis4_motor->send_torque(0);
     axis3->control(0.005);
     axis4->control(0.005);
     axis5->control(0.005);
     axis6->control(0.005);
-    end_motor->send_torque(end_targat_torque);
+    // end_motor->send_torque(end_targat_torque);
 }
 
 void engineer_arm_mission(void* args)
@@ -343,6 +355,10 @@ void engineer_arm_mission(void* args)
     axis4_motor->enable();
     vTaskDelay(1);
     axis5_motor->enable();
+    vTaskDelay(1);
+    axis6_motor->enable();
+    vTaskDelay(1);
+    end_motor->enable();
     vTaskDelay(1);
 
     for(;;)

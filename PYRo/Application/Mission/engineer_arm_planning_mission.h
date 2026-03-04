@@ -19,6 +19,20 @@ typedef struct
 }
 control_target_param_t;
 
+typedef enum
+{
+    RESET_POSE_TRANSITION,
+    RESET_POSE,
+    NORMAL_POSE_TRANSITION,
+    NORMAL_POSE,
+    SELF_CONTROL_TRANSITION,
+    SELF_CONTROL,
+    MOTION_Start,
+    MOTION,
+    
+}
+specific_control_mode_t;
+
 extern control_target_param_t *control_target_param;
 extern SemaphoreHandle_t rc_planning_sem;
 

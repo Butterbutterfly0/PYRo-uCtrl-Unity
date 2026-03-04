@@ -156,7 +156,13 @@ add_executable(${CMAKE_PROJECT_NAME}
         PYRo/Application/Mission/arm_pose_def.cpp
         PYRo/Application/Mission/interboard_communication_mission.cpp
         PYRo/Application/Mission/self_control_mission.cpp
-)
+        
+        PYRo/Application/Mission/arm_planner_component/arm_rc_command.cpp
+        PYRo/Application/Mission/arm_planner_component/arm_self_control_command.cpp
+        PYRo/Application/Mission/arm_planner_component/arm_transition_component.cpp
+
+        PYRo/Application/Mission/arm_planner_component/arm_fixed_motion_hub.cpp
+        )
 
 # Add STM32CubeMX generated sources (这会自动引入 specs 文件)
 add_subdirectory(cmake/stm32cubemx)
@@ -202,6 +208,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC
         PYRo/Moudle/Chassis/Hybrid
 
         PYRo/Application/Mission
+        PYRo/Application/Mission/arm_planner_component
 
 )
 
