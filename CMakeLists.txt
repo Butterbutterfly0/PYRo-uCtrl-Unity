@@ -72,6 +72,7 @@ add_executable(${CMAKE_PROJECT_NAME}
         PYRo/Core/Memory/pyro_core_dma_heap.c
         PYRo/Core/Memory/pyro_core_mem.cpp
         PYRo/Core/Task/pyro_task.cpp
+        PYRo/Core/DataBoard/pyro_databoard.cpp
 
         # --- Peripheral ---
         PYRo/Peripheral/CAN/pyro_can_drv.cpp
@@ -159,6 +160,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC
         PYRo/Core/Lock
         PYRo/Core/Memory
         PYRo/Core/Task
+        PYRo/Core/DataBoard
 
         # --- Peripheral ---
         PYRo/Peripheral/CAN
