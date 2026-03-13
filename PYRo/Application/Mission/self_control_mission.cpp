@@ -5,20 +5,32 @@
 #include <string.h>
 #include "queue.h"
 
+extern "C"
+{
+    #include "CRC8_CRC16.h"
+}
+
+
 typedef struct __attribute__((packed))
 {
-    uint16_t frame_header;
-    float axis1;
-    float axis2;
-    float axis3;
-    float axis4;
-    float axis5;
-    float axis6;
+    uint8_t SOF;
+    uint16_t dataLenth;
+    uint8_t  seq;
+    uint8_t  crc8;
+}
+tFrameHeader;
+
+typedef struct __attribute__((packed))
+{
+    tFrameHeader frame_header;
+    uint16_t cmd_id;
+    float data[7];
+    uint8_t used_data[2];
     uint16_t crc16;
 }
-datalink_frame_t;
+referee_datalink_frame_t;
 
-datalink_frame_t self_control_frame;
+referee_datalink_frame_t self_control_frame;
 
 
 extern pyro::databoard* global_databoard;
@@ -53,7 +65,7 @@ static uint16_t crc16_append(uint8_t *data, uint16_t len)
 
 bool self_control_callback(uint8_t *buf, uint16_t len,BaseType_t xHigherPriorityTaskWoken)
 {
-    if( len != 0 )
+    if( len == sizeof(referee_datalink_frame_t) )
     {
         xQueueSendFromISR(self_control_queue, buf,  NULL);
         return true;
@@ -70,9 +82,9 @@ extern "C" void self_control_mission(void* args)
         vTaskDelay(1);
     }
 
-    self_control_queue = xQueueCreate(10, sizeof(datalink_frame_t));
+    self_control_queue = xQueueCreate(10, sizeof(referee_datalink_frame_t));
 
-    self_control_uart_drv = pyro::uart_drv_t::get_instance(pyro::uart_drv_t::uart10);
+    self_control_uart_drv = pyro::uart_drv_t::get_instance(pyro::uart_drv_t::uart1);
     self_control_uart_drv->add_rx_event_callback(self_control_callback, 2);
 
     selfcontrol_axis1_id = global_databoard->get_topic_id("selfcontrol axis1");
@@ -85,22 +97,22 @@ extern "C" void self_control_mission(void* args)
     for(;;)
     {   
         xQueueReceive(self_control_queue, self_control_buf,  portMAX_DELAY);
-        uint16_t crc = crc16_append(((uint8_t*)&self_control_buf)+2, sizeof(datalink_frame_t)-4);
-        if( crc == ((datalink_frame_t*)self_control_buf)->crc16 && ((datalink_frame_t*)self_control_buf)->frame_header == 0x55AA)
+        // uint16_t crc = crc16_append(((uint8_t*)&self_control_buf)+2, sizeof(referee_datalink_frame_t)-4);
+        if( verify_CRC8_check_sum(self_control_buf,sizeof(tFrameHeader))&& verify_CRC16_check_sum(self_control_buf,sizeof(referee_datalink_frame_t)) && ((referee_datalink_frame_t*)self_control_buf)->frame_header.SOF == 0xA5 && ((referee_datalink_frame_t*)self_control_buf)->cmd_id == 0x302 && ((referee_datalink_frame_t*)self_control_buf)->frame_header.dataLenth == 30 )
         {
-            memcpy(&self_control_frame, self_control_buf, sizeof(datalink_frame_t));
+            memcpy(&self_control_frame, self_control_buf, sizeof(referee_datalink_frame_t));
             float temp_f;
-            temp_f = ((float)self_control_frame.axis1);
+            temp_f = ((float)self_control_frame.data[0]);
             global_databoard->write_topic(selfcontrol_axis1_id,*((pyro::genenral_data_t*)&(temp_f)));
-            temp_f = ((float)self_control_frame.axis2);
+            temp_f = ((float)self_control_frame.data[1]);
             global_databoard->write_topic(selfcontrol_axis2_id,*((pyro::genenral_data_t*)&(temp_f)));
-            temp_f = ((float)self_control_frame.axis3);
+            temp_f = ((float)self_control_frame.data[2]);
             global_databoard->write_topic(selfcontrol_axis3_id,*((pyro::genenral_data_t*)&(temp_f)));
-            temp_f = ((float)self_control_frame.axis4);
+            temp_f = ((float)self_control_frame.data[3]);
             global_databoard->write_topic(selfcontrol_axis4_id,*((pyro::genenral_data_t*)&(temp_f)));
-            temp_f = ((float)self_control_frame.axis5);
+            temp_f = ((float)self_control_frame.data[4]);
             global_databoard->write_topic(selfcontrol_axis5_id,*((pyro::genenral_data_t*)&(temp_f)));
-            temp_f = ((float)self_control_frame.axis6);
+            temp_f = ((float)self_control_frame.data[5]);
             global_databoard->write_topic(selfcontrol_axis6_id,*((pyro::genenral_data_t*)&(temp_f)));
         }
         

@@ -7,10 +7,8 @@
 #include "arm_pose_def.h"
 
 
-typedef struct{
-    arm_motion_e selected_motion;
-}
-user_command_t;
+
+
 
 // The class is used to individualize the rc logic part from the other part 
 class arm_rc_command_t

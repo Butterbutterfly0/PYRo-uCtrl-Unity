@@ -2,20 +2,42 @@
 #define __ENGINEER_ARM_PLANNING_MISSION_H__
 
 #include "semphr.h"
+#include "arm_pose_def.h"
+
 
 typedef enum
 {
     ZERO_FORCE,
-    POSITION_CONTROL
+    POSITION_CONTROL,
+    TORQUE_COMPENSATION,
 }
 control_mode_t;
+
+typedef enum
+{
+    Biopolar,
+    Analog
+}
+gripper_mode_e;
+
+typedef struct{
+    arm_motion_e selected_motion = none_motion;
+    gripper_mode_e gripper_mode = Biopolar;
+    bool hold_gripper;
+    float gripper_increment;
+    float gripper_target_pos;
+    float magazine_target_pos;
+}
+user_command_t;
 
 typedef struct 
 {
     control_mode_t control_mode;
     float axis_current_pos[6];
     float axis_target_pos[6];
-    float end_target_torque;
+    gripper_mode_e gripper_mode;
+    bool hold_gripper;
+    float gripper_pos;
 }
 control_target_param_t;
 
@@ -29,6 +51,9 @@ typedef enum
     SELF_CONTROL,
     MOTION_Start,
     MOTION,
+    MOTION_PAUSE,
+    MOTION_CONTINUE,
+    GRAVITY_COMPENSATION,
     
 }
 specific_control_mode_t;

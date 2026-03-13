@@ -7,6 +7,7 @@ extern "C" {
     extern void interboard_communication_mission(void* args);
     extern  void self_control_mission(void* args);
     extern void engineer_arm_planning_mission(void* args);
+    extern void VOFA_Thread(void *argument);
 
     void start_mission_planer_task(void const *argument)
     {
@@ -20,6 +21,8 @@ extern "C" {
         xTaskCreate(self_control_mission, "self_control_mission", 512, nullptr,
                     configMAX_PRIORITIES - 1, nullptr);
         xTaskCreate(engineer_arm_planning_mission, "engineer_arm_planning_mission", 512, nullptr,
+                    configMAX_PRIORITIES - 1, nullptr);
+        xTaskCreate(VOFA_Thread, "VOFA_Thread", 512, nullptr,
                     configMAX_PRIORITIES - 1, nullptr);
         vTaskDelete(nullptr);
     }

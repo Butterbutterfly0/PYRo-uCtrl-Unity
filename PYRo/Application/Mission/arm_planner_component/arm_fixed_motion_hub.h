@@ -11,18 +11,19 @@ class arm_fixed_motion_t
     public:
         arm_fixed_motion_t();
         ~arm_fixed_motion_t();
-        void bind(float motion_slice[][7],uint32_t stage_num);
+        void bind(float motion_slice[][8],uint32_t stage_num);
         void reset();
         void start_motion();
         bool update_motion(float current_period);
-        void get_motion_slice(float dst[7]);
+        bool current_step_over(float current_period);
+        void get_motion_slice(float dst[8]);
         transition_state_t get_motion_transition_state();
     private:
-        float (*_motion_slice)[7];
+        float (*_motion_slice)[8];
         uint32_t _motion_total_stage;
         uint32_t _motion_current_stage;
         transition_state_t _motion_transition_state;
-        float _now_slice[7];
+        float _now_slice[8];
 };
 
 class arm_fixed_motion_group_t
@@ -33,8 +34,9 @@ class arm_fixed_motion_group_t
         void select_motion(arm_motion_e motion);
         void start_motion(float current_position[6]);
         bool update_motion(float current_period);
-        void get_motion_slice(float xdata[7]);
-        void add_motion(arm_motion_e motion_id,float motion_slice[][7],uint32_t stage_num);
+        bool current_step_over(float current_period);
+        void get_motion_slice(float xdata[8]);
+        void add_motion(arm_motion_e motion_id,float motion_slice[][8],uint32_t stage_num);
         bool motion_over();
     private:
         arm_motion_e _now_motion_id;

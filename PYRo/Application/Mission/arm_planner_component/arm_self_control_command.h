@@ -4,13 +4,15 @@
 #include <string.h>
 #include "pyro_databoard.h"
 
+#include "engineer_arm_planning_mission.h"
+
 class arm_self_control_command
 {
     public:
         arm_self_control_command();
         ~arm_self_control_command();
         void bind(pyro::databoard* databoard);
-        void update();
+        void update(user_command_t& user_command);
         void get_self_control_command(float xdata[6]);
         float* get_self_control_command();
     private:

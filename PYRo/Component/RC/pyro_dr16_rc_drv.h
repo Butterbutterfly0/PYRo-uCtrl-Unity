@@ -98,6 +98,7 @@ class dr16_drv_t : public rc_drv_t
     };
     typedef struct key_t
     {
+        uint8_t state;
         key_ctrl_t ctrl;
         uint32_t time;
     } key_t;

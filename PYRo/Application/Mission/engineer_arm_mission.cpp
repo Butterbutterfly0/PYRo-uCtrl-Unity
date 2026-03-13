@@ -7,6 +7,11 @@
 
 #include "pyro_rc_hub.h"
 #include "engineer_arm_planning_mission.h"
+#include "pyro_databoard.h"
+
+#include "arm_rc_command.h"
+
+#include <math.h>
 
 extern "C" void engineer_arm_mission(void* args);
 namespace pyro
@@ -117,9 +122,16 @@ class axis_control_t
         void set_lower_limit(float lower_limit){_lower_limit=lower_limit;}
 
         void set_feedback_pos_offset(float offset){_feedback_pos_offset=offset;}
+        void reset_pid()
+        {
+            _pos_pid->clear();
+            _rot_pid->clear();
+        }
     
 };
 };
+
+extern pyro::databoard* global_databoard;
 
 pyro::rc_drv_t* dr16_drv;
 
@@ -142,9 +154,12 @@ pyro::axis_control_t *axis6;
 pyro::pid_t *axis6_pos_pid ;
 pyro::pid_t *axis6_rot_pid ;
 pyro::dm_motor_drv_t *axis6_motor;
-float axis6_target_pos,axis6_target_rot,axis6_target_torque,axis6_feedback_pos,axis6_feedback_rot;
+
 
 pyro::dm_motor_drv_t *end_motor;
+pyro::pid_t *end_pos_pid;
+pyro::pid_t *end_rot_pid;
+pyro::axis_control_t *end_axis;
 
 float motor_current_pos[7]={};
 float motor_target_pos[7]={};
@@ -152,8 +167,12 @@ float motor_current_rot[7]={};
 float motor_current_torque[7]={};
 
 float axis_current_pos[6]={};
+uint32_t axis_current_pos_id[6]={};
 
-float end_targat_torque= 0;
+control_target_param_t local_control_target_param;
+
+bool hold_gripper=false;
+float gripper_pos = 0.0f;
 
 
 control_mode_t control_mode;
@@ -172,32 +191,34 @@ void engineer_arm_init()
     axis1_motor->set_torque_range(-27, 27);
     axis1 = new pyro::axis_control_t(axis1_motor,axis1_pos_pid,axis1_rot_pid);
     axis1->enable_constraint();
-    axis1->set_upper_limit(0.117543131);
-    axis1->set_lower_limit(-pyro::PI/2);
-    axis1->set_feedback_pos_offset(0.4682);
+    axis1->set_upper_limit(pyro::PI);
+    axis1->set_lower_limit(-2.1599);
+    axis1->set_feedback_pos_offset(0.6461);
 
-    pyro::pid_t *axis2_pos_pid = new pyro::pid_t(11,0.4,0.0,20.0,150);
-    pyro::pid_t *axis2_rot_pid = new pyro::pid_t(30,2.4,0.0,20.0,150);
+    pyro::pid_t *axis2_pos_pid = new pyro::pid_t(20,0,0.0,20.0,150);
+    pyro::pid_t *axis2_rot_pid = new pyro::pid_t(20,0,0.0,20.0,150);
+    // pyro::pid_t *axis2_pos_pid = new pyro::pid_t(8,0,0.0,20.0,150);
+    // pyro::pid_t *axis2_rot_pid = new pyro::pid_t(15,0,0.0,20.0,150);
     axis2_motor = new pyro::dm_motor_drv_t(0x4, 0x3, pyro::can_hub_t::can1);
     axis2_motor->set_position_range(-pyro::PI, pyro::PI);
     axis2_motor->set_rotate_range(-150, 150); 
     axis2_motor->set_torque_range(-150, 150);
     axis2 = new pyro::axis_control_t(axis2_motor,axis2_pos_pid,axis2_rot_pid);
     axis2->enable_constraint();
-    axis2->set_upper_limit(2.83);
-    axis2->set_lower_limit(-0.8);
+    axis2->set_upper_limit(1);
+    axis2->set_lower_limit(-0.3);
     axis2->set_feedback_pos_offset(-2.3022);
 
-    pyro::pid_t *axis3_pos_pid = new pyro::pid_t(10,0.0,0.0,0.0,160);
-    pyro::pid_t *axis3_rot_pid = new pyro::pid_t(13,0.0,0.0,0.0,40);
+    pyro::pid_t *axis3_pos_pid = new pyro::pid_t(15,0.0,0.0,0.0,160);
+    pyro::pid_t *axis3_rot_pid = new pyro::pid_t(10,0.2,0.0,10.0,40);
     axis3_motor = new pyro::dm_motor_drv_t(0x6, 0x5, pyro::can_hub_t::can3);
     axis3_motor->set_position_range(-pyro::PI, pyro::PI);
     axis3_motor->set_rotate_range(-160, 160); 
     axis3_motor->set_torque_range(-40, 40);
     axis3 = new pyro::axis_control_t(axis3_motor,axis3_pos_pid,axis3_rot_pid);
     axis3->enable_constraint();
-    axis3->set_upper_limit(2.83);
-    axis3->set_lower_limit(-0.8);
+    axis3->set_upper_limit(1.35);
+    axis3->set_lower_limit(-0.3);
     axis3->set_feedback_pos_offset(-0.2162);
 
     pyro::pid_t *axis4_pos_pid = new pyro::pid_t(15.7,1.2,0.0,6,200);
@@ -207,26 +228,26 @@ void engineer_arm_init()
     axis4_motor->set_rotate_range(-200, 200); 
     axis4_motor->set_torque_range(-7, 7);
     axis4 = new pyro::axis_control_t(axis4_motor,axis4_pos_pid,axis4_rot_pid);
-    axis4->enable_constraint();
-    axis4->set_upper_limit(pyro::PI/2);
-    axis4->set_lower_limit(-pyro::PI/2);
-    axis4->set_feedback_pos_offset(0.2961);
+    axis4->disable_constraint();
+    // axis4->set_upper_limit(pyro::PI);
+    // axis4->set_lower_limit(-pyro::PI);
+    axis4->set_feedback_pos_offset(1.548);
 
 
     // pyro::pid_t *axis5_pos_pid = new pyro::pid_t(6.3,0,0.0,10,30);
     // pyro::pid_t *axis5_rot_pid = new pyro::pid_t(1.0,0.1,0.00,4,8);
 
-    pyro::pid_t *axis5_pos_pid = new pyro::pid_t(10.3,0.2,0.0,10,200);
-    pyro::pid_t *axis5_rot_pid = new pyro::pid_t(1.2,0.3,0.00,4,7);
+    pyro::pid_t *axis5_pos_pid = new pyro::pid_t(10.3,0.1,0.0,20,200);
+    pyro::pid_t *axis5_rot_pid = new pyro::pid_t(1.0,0.01,0.00,4,7);
     axis5_motor = new pyro::dm_motor_drv_t(0xA, 0x9, pyro::can_hub_t::can2);
     axis5_motor->set_position_range(-pyro::PI, pyro::PI);
     axis5_motor->set_rotate_range(-200, 200); 
     axis5_motor->set_torque_range(-7, 7);
     axis5 = new pyro::axis_control_t(axis5_motor,axis5_pos_pid,axis5_rot_pid);
     axis5->enable_constraint();
-    axis5->set_upper_limit(0.66);
-    axis5->set_lower_limit(-0.66);
-    axis5->set_feedback_pos_offset(1.8395);
+    axis5->set_upper_limit(pyro::PI/2);
+    axis5->set_lower_limit(-pyro::PI/2);
+    axis5->set_feedback_pos_offset(1.86);
 
     axis6_pos_pid = new pyro::pid_t(9,0.0,0.0,0.0,200);
     axis6_rot_pid = new pyro::pid_t(0.8,0.1,0.0,1,7);
@@ -240,21 +261,38 @@ void engineer_arm_init()
     axis6->set_lower_limit(-pyro::PI/2);
     axis6->set_feedback_pos_offset(2.9030);
 
+    end_pos_pid = new pyro::pid_t(9,0.0,0.0,0,200);
+    end_rot_pid = new pyro::pid_t(0.8,0.0,0.0,0,7);
     end_motor = new pyro::dm_motor_drv_t(0xE, 0xD, pyro::can_hub_t::can2);
     end_motor->set_position_range(-pyro::PI, pyro::PI);
     end_motor->set_rotate_range(-200, 200); 
     end_motor->set_torque_range(-7, 7);
+    end_axis = new pyro::axis_control_t(end_motor,end_pos_pid,end_rot_pid);
+    end_axis->enable_constraint();
+    end_axis->set_upper_limit(pyro::PI);
+    end_axis->set_lower_limit(-pyro::PI);
+    end_axis->set_feedback_pos_offset(-0.3560);
+
 }
 
 void enigneer_arm_update()
 {
-    axis1_motor->update_feedback();
-    axis2_motor->update_feedback();
-    axis3_motor->update_feedback();
-    axis4_motor->update_feedback();
-    axis5_motor->update_feedback();
-    axis6_motor->update_feedback();
-    end_motor->update_feedback();
+    // axis1_motor->update_feedback();
+    // axis2_motor->update_feedback();
+    // axis3_motor->update_feedback();
+    // axis4_motor->update_feedback();
+    // axis5_motor->update_feedback();
+    // axis6_motor->update_feedback();
+    // end_motor->update_feedback();
+
+    axis1->update();
+    axis2->update();
+    axis3->update();
+    axis4->update();
+    axis5->update();
+    axis6->update();
+    end_axis->update();
+    
 
     motor_current_pos[0]=axis1_motor->get_current_position();
     motor_current_pos[1]=axis2_motor->get_current_position();
@@ -280,12 +318,7 @@ void enigneer_arm_update()
     motor_current_torque[5]=axis6_motor->get_current_torque();
     motor_current_torque[6]=end_motor->get_current_torque();
 
-    axis1->update();
-    axis2->update();
-    axis3->update();
-    axis4->update();
-    axis5->update();
-    axis6->update();
+    
 
     axis_current_pos[0]=axis1->get_position();
     axis_current_pos[1]=axis2->get_position();
@@ -293,6 +326,19 @@ void enigneer_arm_update()
     axis_current_pos[3]=axis4->get_position();
     axis_current_pos[4]=axis5->get_position();
     axis_current_pos[5]=axis6->get_position();
+
+    global_databoard->write_topic(axis_current_pos_id[0],
+            *((pyro::genenral_data_t*)&(axis_current_pos[0])));
+    global_databoard->write_topic(axis_current_pos_id[1],
+            *((pyro::genenral_data_t*)&(axis_current_pos[1])));
+    global_databoard->write_topic(axis_current_pos_id[2],
+            *((pyro::genenral_data_t*)&(axis_current_pos[2])));
+    global_databoard->write_topic(axis_current_pos_id[3],
+            *((pyro::genenral_data_t*)&(axis_current_pos[3])));
+    global_databoard->write_topic(axis_current_pos_id[4],
+            *((pyro::genenral_data_t*)&(axis_current_pos[4])));
+    global_databoard->write_topic(axis_current_pos_id[5],
+            *((pyro::genenral_data_t*)&(axis_current_pos[5])));
 
     xSemaphoreTake(rc_planning_sem, portMAX_DELAY);
     memcpy(control_target_param->axis_current_pos,axis_current_pos,sizeof(float)*6);
@@ -303,19 +349,43 @@ const  pyro::dr16_drv_t::dr16_ctrl_t *rc_data;
 void engineer_arm_set_control()
 {
     xSemaphoreTake(rc_planning_sem, portMAX_DELAY);
-    control_mode = control_target_param->control_mode;
-    axis1->set_target(control_target_param->axis_target_pos[0]);
-    axis2->set_target(control_target_param->axis_target_pos[1]);
-    axis3->set_target(control_target_param->axis_target_pos[2]);
-    axis4->set_target(control_target_param->axis_target_pos[3]);
-    axis5->set_target(control_target_param->axis_target_pos[4]);
-    axis6->set_target(control_target_param->axis_target_pos[5]);
-    end_targat_torque = control_target_param->end_target_torque;
+    memcpy(&local_control_target_param,control_target_param,sizeof(control_target_param_t));
     xSemaphoreGive(rc_planning_sem);
+    control_mode = local_control_target_param.control_mode;
+    axis1->set_target(local_control_target_param.axis_target_pos[0]);
+    axis2->set_target(local_control_target_param.axis_target_pos[1]);
+    axis3->set_target(local_control_target_param.axis_target_pos[2]);
+    axis4->set_target(local_control_target_param.axis_target_pos[3]);
+    axis5->set_target(local_control_target_param.axis_target_pos[4]);
+    axis6->set_target(local_control_target_param.axis_target_pos[5]);
+    hold_gripper = local_control_target_param.hold_gripper;
+    // gripper_pos += local_control_target_param.gripper_increment;
+    // float temp = 0;
+    
+    if(local_control_target_param.gripper_mode == Biopolar)
+    {
+         if(hold_gripper)
+            gripper_pos = 0;
+        else
+            gripper_pos = 1.6;
+    }
+    else if(local_control_target_param.gripper_mode == Analog)
+    {
+        gripper_pos = local_control_target_param.gripper_pos;
+    }
+    end_axis->set_target(gripper_pos);
 }
 
 void engineer_arm_zeroforce()
 {
+    axis1->reset_pid();
+    axis2->reset_pid();
+    axis3->reset_pid();
+    axis4->reset_pid();
+    axis5->reset_pid();
+    axis6->reset_pid();
+    end_axis->reset_pid();
+
     axis1_motor->send_torque(0);
     axis2_motor->send_torque(0);
     axis3_motor->send_torque(0);
@@ -335,7 +405,45 @@ void engineer_arm_control()
     axis4->control(0.005);
     axis5->control(0.005);
     axis6->control(0.005);
-    // end_motor->send_torque(end_targat_torque);
+    // end_motor->send_torque(0);
+    end_axis->control(0.005);
+}
+
+constexpr float axis2_m = 10.5;
+constexpr float axis3_m = 11;
+constexpr float axis4_m = 0.05;
+constexpr float axis5_m = 0.3;
+
+
+float axis2_gravity_rad = 0;
+float axis3_gravity_rad = 0;
+float axis4_gravity_rad = 0;
+float axis5_gravity_rad = 0;
+
+float axis2_compensation_torque = 0;
+float axis3_compensation_torque = 0;
+float axis4_compensation_torque = 0;
+float axis5_compensation_torque = 0;
+
+void engineer_arm_gravcomp()
+{
+    axis2_gravity_rad = axis2->get_position();
+    axis3_gravity_rad = pyro::PI/2-axis2->get_position()+axis3->get_position();
+    axis4_gravity_rad = axis4->get_position();
+    axis5_gravity_rad = axis3_gravity_rad + axis5->get_position();
+
+    axis5_compensation_torque = -sin(axis5_gravity_rad)*axis5_m*cos(axis4_gravity_rad);
+    axis4_compensation_torque = -cos(axis4_gravity_rad)*axis4_m;
+    axis3_compensation_torque = -sin(axis3_gravity_rad)*axis3_m;
+    axis2_compensation_torque = -sin(axis2_gravity_rad)*axis2_m-0.1*axis3_compensation_torque;
+
+    axis1_motor->send_torque(0);
+    axis2_motor->send_torque(axis2_compensation_torque);
+    axis3_motor->send_torque(axis3_compensation_torque);
+    axis4_motor->send_torque(axis4_compensation_torque);
+    axis5_motor->send_torque(axis5_compensation_torque);
+    axis6_motor->send_torque(0);
+    end_motor->send_torque(0);
 }
 
 void engineer_arm_mission(void* args)
@@ -343,6 +451,18 @@ void engineer_arm_mission(void* args)
     osDelay(10);
 
     engineer_arm_init();
+
+    while(global_databoard == nullptr)
+    {
+        vTaskDelay(1);
+    }
+
+    axis_current_pos_id[0] = global_databoard->get_topic_id("axis1_current_pos");
+    axis_current_pos_id[1] = global_databoard->get_topic_id("axis2_current_pos");
+    axis_current_pos_id[2] = global_databoard->get_topic_id("axis3_current_pos");
+    axis_current_pos_id[3] = global_databoard->get_topic_id("axis4_current_pos");
+    axis_current_pos_id[4] = global_databoard->get_topic_id("axis5_current_pos");
+    axis_current_pos_id[5] = global_databoard->get_topic_id("axis6_current_pos");
 
     vTaskDelay(1500);
 
@@ -372,6 +492,10 @@ void engineer_arm_mission(void* args)
         else if(control_mode==POSITION_CONTROL)
         {
             engineer_arm_control();
+        }
+        else if(control_mode == TORQUE_COMPENSATION)
+        {
+            engineer_arm_gravcomp();
         }
         vTaskDelay(1);
     }

@@ -16,22 +16,29 @@ typedef enum
     arm_grip_energy_unit_240,
     arm_grip_energy_unit_300,
 
+    arm_push_energy_unit,
+    arm_pop_energy_unit,
+
 
     arm_motion_max
 }
 arm_motion_e;
 
-extern float arm_grip_energy_unit_0_motion[][7];
+extern float arm_grip_energy_unit_0_motion[][8];
 extern uint32_t arm_grip_energy_unit_0_motion_stage_num;
-extern float arm_grip_energy_unit_60_motion[][7];
+extern float arm_grip_energy_unit_60_motion[][8];
 extern uint32_t arm_grip_energy_unit_60_motion_stage_num;
-extern float arm_grip_energy_unit_120_motion[][7];
+extern float arm_grip_energy_unit_120_motion[][8];
 extern uint32_t arm_grip_energy_unit_120_motion_stage_num;
-extern float arm_grip_energy_unit_180_motion[][7];
+extern float arm_grip_energy_unit_180_motion[][8];
 extern uint32_t arm_grip_energy_unit_180_motion_stage_num;
-extern float arm_grip_energy_unit_240_motion[][7];
+extern float arm_grip_energy_unit_240_motion[][8];
 extern uint32_t arm_grip_energy_unit_240_motion_stage_num;
-extern float arm_grip_energy_unit_300_motion[][7];
+extern float arm_grip_energy_unit_300_motion[][8];
 extern uint32_t arm_grip_energy_unit_300_motion_stage_num;
+extern float arm_push_energy_unit_motion[][8];
+extern uint32_t arm_push_energy_unit_motion_stage_num;
+extern float arm_pop_energy_unit_motion[][8];
+extern uint32_t arm_pop_energy_unit_motion_stage_num;
 
 #endif

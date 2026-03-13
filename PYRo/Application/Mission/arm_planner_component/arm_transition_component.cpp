@@ -1,4 +1,5 @@
 #include "arm_transition_component.h"
+#include "pyro_dwt_drv.h"
 
 void axis_transition_init(transition_param_t* param,float transition_period,float start_angle,float end_angle)
 {
@@ -25,7 +26,8 @@ void arm_transition_init(arm_transition_t* param, float transition_period, float
 
 void arm_transition_update(arm_transition_t* param)
 { 
-    param->transition_current_time = (xTaskGetTickCount()-param->transition_start_Tick)/1000.0f;
+    // param->transition_current_time = (xTaskGetTickCount()-param->transition_start_Tick)/1000.0f;
+    param->transition_current_time = pyro::dwt_drv_t::get_timeline_ms();
     float _t = param->transition_current_time;
     float _t2 = _t*_t;
     float _t3 = _t2*_t;
@@ -87,7 +89,7 @@ motion_transition_t::~motion_transition_t(){}
 
 void motion_transition_t::init(float transition_period, float start_angle[6],float end_angle[6])
 {
-    _transition_start_Tick = xTaskGetTickCount();
+    _transition_start_Tick = pyro::dwt_drv_t::get_timeline_ms();
     _transition_total_period = transition_period;
     _transition_current_period = 0;
     for(int i=0;i<6;i++)
@@ -99,7 +101,7 @@ void motion_transition_t::init(float transition_period, float start_angle[6],flo
 void motion_transition_t::interpolation_update()
 {
     float xdata[3];
-    xdata[0] = (xTaskGetTickCount()-_transition_start_Tick)/1000.0f;
+    xdata[0] = (pyro::dwt_drv_t::get_timeline_ms()-_transition_start_Tick)/1000.0f;
     xdata[1] = xdata[0] * xdata[0];
     xdata[2] = xdata[1] * xdata[0];
 
@@ -134,4 +136,9 @@ float motion_transition_t::get_transition_total_period() const
 bool motion_transition_t::transition_timeout() const
 {
     return _transition_current_period>=_transition_total_period;
+}
+
+void motion_transition_t::recover_from_pasuse()
+{
+    _transition_start_Tick = pyro::dwt_drv_t::get_timeline_ms()-_transition_current_period*1000.0f;
 }

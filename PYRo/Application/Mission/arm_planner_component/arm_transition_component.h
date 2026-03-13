@@ -69,9 +69,10 @@ class motion_transition_t
         float get_transition_current_period() const;
         float get_transition_total_period() const;
         bool transition_timeout() const;
+        void recover_from_pasuse();
     private:
         value_interpolation_t _axis_transition[6];
-        uint32_t _transition_start_Tick;
+        float _transition_start_Tick;
         float _transition_total_period;
         float _transition_current_period;
         float _interpolation_value[6];

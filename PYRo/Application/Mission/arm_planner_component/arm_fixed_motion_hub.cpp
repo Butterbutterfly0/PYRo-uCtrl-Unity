@@ -9,7 +9,7 @@ arm_fixed_motion_t::arm_fixed_motion_t()
 
 arm_fixed_motion_t::~arm_fixed_motion_t(){}
 
-void arm_fixed_motion_t::bind(float motion_slice[][7], uint32_t stage_num)
+void arm_fixed_motion_t::bind(float motion_slice[][8], uint32_t stage_num)
 {
     _motion_slice = motion_slice;
     _motion_total_stage = stage_num;
@@ -25,7 +25,7 @@ void arm_fixed_motion_t::start_motion()
 {
     _motion_current_stage = 0;
     _motion_transition_state = Transition_running;
-    memcpy(_now_slice,_motion_slice[0],sizeof(float)*7);
+    memcpy(_now_slice,_motion_slice[0],sizeof(float)*8);
 }
 
 bool arm_fixed_motion_t::update_motion(float current_period)
@@ -43,16 +43,29 @@ bool arm_fixed_motion_t::update_motion(float current_period)
             else
             {
                 ret = true;
-                memcpy(_now_slice,_motion_slice[_motion_current_stage],sizeof(float)*7);
+                memcpy(_now_slice,_motion_slice[_motion_current_stage],sizeof(float)*8);
             }
         }
     }
     return ret;
 }
 
-void arm_fixed_motion_t::get_motion_slice(float xdata[7])
+bool arm_fixed_motion_t::current_step_over(float current_period)
 {
-    memcpy(xdata,_now_slice,sizeof(float)*6);
+    bool ret = false;
+    if(_motion_transition_state == Transition_running)
+    {
+        if(current_period>=_now_slice[0])
+        {
+            ret = true;
+        }
+    }
+    return ret;
+}
+
+void arm_fixed_motion_t::get_motion_slice(float xdata[8])
+{
+    memcpy(xdata,_now_slice,sizeof(float)*8);
 }
 
 transition_state_t arm_fixed_motion_t::get_motion_transition_state()
@@ -76,7 +89,12 @@ bool arm_fixed_motion_group_t::update_motion(float current_period)
     
 }
 
-void arm_fixed_motion_group_t::get_motion_slice(float xdata[7])
+bool arm_fixed_motion_group_t::current_step_over(float current_period)
+{
+    return _now_motion ->current_step_over(current_period);
+}
+
+void arm_fixed_motion_group_t::get_motion_slice(float xdata[8])
 {
     _now_motion ->get_motion_slice(xdata);
 }
@@ -88,7 +106,7 @@ arm_fixed_motion_group_t::arm_fixed_motion_group_t()
     _now_motion_id = none_motion;
 }
 
-void arm_fixed_motion_group_t::add_motion(arm_motion_e motion_id,float motion_slice[][7],uint32_t stage_num)
+void arm_fixed_motion_group_t::add_motion(arm_motion_e motion_id,float motion_slice[][8],uint32_t stage_num)
 {
     if(_motion_list_num>=16)
     {

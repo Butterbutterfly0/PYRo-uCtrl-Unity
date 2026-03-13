@@ -15,7 +15,7 @@ void arm_self_control_command::bind(pyro::databoard* databoard)
     _selfcontrol_axis6_id = databoard->get_topic_id("selfcontrol axis6");
 }
 
-void arm_self_control_command::update()
+void arm_self_control_command::update(user_command_t& user_command)
 {
     uint32_t timestamp;
     _databoard->read(_selfcontrol_axis1_id,(pyro::genenral_data_t*)&(_self_control_command[0]),timestamp);

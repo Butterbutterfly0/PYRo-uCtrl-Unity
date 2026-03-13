@@ -47,6 +47,23 @@ extern "C"
         global_databoard->create_topic("selfcontrol axis5",pyro::data_type_t::FLOAT);
         global_databoard->create_topic("selfcontrol axis6",pyro::data_type_t::FLOAT);
 
+        global_databoard->create_topic("axis1_current_pos",pyro::data_type_t::FLOAT);
+        global_databoard->create_topic("axis2_current_pos",pyro::data_type_t::FLOAT);
+        global_databoard->create_topic("axis3_current_pos",pyro::data_type_t::FLOAT);
+        global_databoard->create_topic("axis4_current_pos",pyro::data_type_t::FLOAT);
+        global_databoard->create_topic("axis5_current_pos",pyro::data_type_t::FLOAT);
+        global_databoard->create_topic("axis6_current_pos",pyro::data_type_t::FLOAT);
+
+        global_databoard->create_topic("axis1_target_pos",pyro::data_type_t::FLOAT);
+        global_databoard->create_topic("axis2_target_pos",pyro::data_type_t::FLOAT);
+        global_databoard->create_topic("axis3_target_pos",pyro::data_type_t::FLOAT);
+        global_databoard->create_topic("axis4_target_pos",pyro::data_type_t::FLOAT);
+        global_databoard->create_topic("axis5_target_pos",pyro::data_type_t::FLOAT);
+        global_databoard->create_topic("axis6_target_pos",pyro::data_type_t::FLOAT);
+
+        global_databoard->create_topic("zero_force",pyro::data_type_t::UNSIGNED_INT);
+        global_databoard->create_topic("magazine_angle",pyro::data_type_t::FLOAT);
+
         vTaskDelete(nullptr);
     }
 }
