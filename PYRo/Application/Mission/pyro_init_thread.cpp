@@ -48,7 +48,8 @@ extern "C"
         global_databoard->create_topic("motor_torque",pyro::data_type_t::FLOAT);
         global_databoard->create_topic("motor_rotate",pyro::data_type_t::FLOAT);
 
-
+        global_databoard->create_topic("zero_force",pyro::data_type_t::UNSIGNED_INT);
+        global_databoard->create_topic("magazine_angle",pyro::data_type_t::FLOAT);
         vTaskDelete(nullptr);
     }
 }

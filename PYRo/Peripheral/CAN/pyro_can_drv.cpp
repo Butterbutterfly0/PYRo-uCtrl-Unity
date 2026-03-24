@@ -63,12 +63,12 @@ can_drv_t::can_drv_t(FDCAN_HandleTypeDef *hfdcan)
 {
     _hfdcan = hfdcan;
     _registerlist.clear();
-    //_registermtx = xSemaphoreCreateMutex();
+    _registermtx = xSemaphoreCreateMutex();
 }
 
 can_drv_t::~can_drv_t(void)
 {
-    // vSemaphoreDelete(_registermtx);
+    vSemaphoreDelete(_registermtx);
 }
 
 pyro::status_t can_drv_t::init(void)
@@ -109,7 +109,7 @@ pyro::status_t can_drv_t::start(void)
 pyro::status_t can_drv_t::send_msg(uint32_t id, uint8_t *data)
 {
     FDCAN_TxHeaderTypeDef tx_header;
-    // if(xSemaphoreTake(_registermtx,portMAX_DELAY)==pdTRUE){
+    if(xSemaphoreTake(_registermtx,portMAX_DELAY)==pdTRUE){
     tx_header.IdType              = FDCAN_STANDARD_ID;
     tx_header.Identifier          = id;
     tx_header.TxFrameType         = FDCAN_DATA_FRAME;
@@ -122,14 +122,14 @@ pyro::status_t can_drv_t::send_msg(uint32_t id, uint8_t *data)
 
     if (HAL_OK != HAL_FDCAN_AddMessageToTxFifoQ(_hfdcan, &tx_header, data))
     {
-        // xSemaphoreGive(_registermtx);
+        xSemaphoreGive(_registermtx);
         return pyro::PYRO_ERROR;
     }
 
-    // xSemaphoreGive(_registermtx);
+    xSemaphoreGive(_registermtx);
     return pyro::PYRO_OK;
-    // }
-    // return pyro::PYRO_ERROR;
+    }
+    return pyro::PYRO_ERROR;
 }
 
 pyro::status_t can_drv_t::register_rx_msg(can_msg_buffer_t *msg_buffer)

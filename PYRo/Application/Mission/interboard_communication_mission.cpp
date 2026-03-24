@@ -21,6 +21,8 @@ typedef struct __attribute__((packed))
     int16_t rc_ch_ly;
     int16_t rc_ch_rx;
     int16_t rc_ch_ry;
+    uint8_t zero_force;
+    float magazine_angle;
     uint16_t crc16;
 } upper_board_tx_frame_t;
 
@@ -67,6 +69,7 @@ bool interboard_communication_callback(uint8_t *buf, uint16_t len,BaseType_t xHi
     return false;
 }
 static uint32_t rc_sw_l_topic_id,rc_sw_r_topic_id,rc_ch_lx_topic_id,rc_ch_ly_topic_id,rc_ch_rx_topic_id,rc_ch_ry_topic_id;
+static uint32_t zero_force_id,magazine_angle_id;
 extern "C" void interboard_communication_mission(void const *argument)
 {
     while(global_databoard == nullptr)
@@ -83,6 +86,8 @@ extern "C" void interboard_communication_mission(void const *argument)
     rc_ch_ly_topic_id = global_databoard->get_topic_id("rc_ch_ly");
     rc_ch_rx_topic_id = global_databoard->get_topic_id("rc_ch_rx");
     rc_ch_ry_topic_id = global_databoard->get_topic_id("rc_ch_ry");
+    zero_force_id = global_databoard->get_topic_id("zero_force");
+    magazine_angle_id = global_databoard->get_topic_id("magazine_angle");
 
     for(;;)
     {
@@ -108,6 +113,11 @@ extern "C" void interboard_communication_mission(void const *argument)
             global_databoard->write_topic(rc_ch_rx_topic_id,*((pyro::genenral_data_t*)&(temp_f)));
             temp_f = ((float)upper_board_tx_frame.rc_ch_ry)/1000.0f;
             global_databoard->write_topic(rc_ch_ry_topic_id,*((pyro::genenral_data_t*)&(temp_f)));
+            temp_i = upper_board_tx_frame.zero_force;
+            global_databoard->write_topic(zero_force_id,
+            *((pyro::genenral_data_t*)&(temp_i)));
+            temp_f = ((float)upper_board_tx_frame.magazine_angle);
+            global_databoard->write_topic(magazine_angle_id,*((pyro::genenral_data_t*)&(temp_f)));
         }
 
         vTaskDelay(1);

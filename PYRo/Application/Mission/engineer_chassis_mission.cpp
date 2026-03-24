@@ -248,6 +248,8 @@ float joint_motor_current_position[2];// l r
 float joint_motor_current_rotate[2];//l r
 float joint_motor_current_torque[2];//l r
 
+
+//解析遥控器数据并设置控制量
 bool chassis_rc_solve()
 {
     pyro::topic::data_status_t rc_data_status;
@@ -272,6 +274,7 @@ bool chassis_rc_solve()
     return true;
 }
 
+//开始关节校准
 void joint_cali_start()
 {
     joint_cali_flag = 1;
@@ -279,6 +282,7 @@ void joint_cali_start()
     joint_cali_tick_count = 0;
 }
 
+//停止关节校准
 void joint_cali_stop()
 {
     joint_cali_flag = 0;
@@ -290,6 +294,7 @@ void joint_cali_stop()
     right_side_joint_control->set_target(t);
 }
 
+//更新关节校准
 void joint_cali_update()
 {
     if(!joint_cali_flag)
@@ -302,11 +307,13 @@ void joint_cali_update()
     }
 }
 
+//设定关节校准时的控制量
 void joint_cali_set_control()
 {
     ;
 }
 
+//设定关节正常控制时的控制量
 void joint_normal_set_control(float increment)
 {
     left_side_joint_control->increment(-increment);
@@ -314,6 +321,7 @@ void joint_normal_set_control(float increment)
 }
 
 
+//麦克纳姆轮逆解
 int mecanum_inverse_kinematics(
     const float target_vel[3],
     float wheel_vel[4]) 
@@ -326,12 +334,13 @@ int mecanum_inverse_kinematics(
     float vy = target_vel[1];
     float omega = target_vel[2];
     // 计算旋转半径
-    float R = 0.21 + 0.23;
+    float R = 0.21 + 0.21;
     // 逆运动学公式：
     // 左前轮：vx + vy + omega*R
     // 右前轮：vx - vy - omega*R
     // 右后轮：vx + vy - omega*R
     // 左后轮：vx - vy + omega*R
+    //X型
     wheel_vel[0] = vx + vy + omega * R;  // 左前轮
     wheel_vel[1] = vx - vy - omega * R;  // 右前轮
     wheel_vel[2] = vx + vy - omega * R;  // 右后轮
@@ -341,8 +350,11 @@ int mecanum_inverse_kinematics(
 
 float speed_vector[3];
 float wheel_vel[4];
+
+//设置底盘控制量
 void chassis_set_control()
 {
+    //设定控制模式
     if(!chassis_rc_solve())
         chassis_mode = ZERO_FORCE;
     if(static_cast<pyro::dr16_drv_t::sw_state_t>(rc_data.sw_r) == pyro::dr16_drv_t::sw_state_t::SW_MID || static_cast<pyro::dr16_drv_t::sw_state_t>(rc_data.sw_r) == pyro::dr16_drv_t::sw_state_t::SW_DOWN)
@@ -353,22 +365,25 @@ void chassis_set_control()
     {
         chassis_mode = ZERO_FORCE;
     }
+    //设定目标速度矢量
     speed_vector[0] = rc_data.ch_ly*800;
     speed_vector[1] = rc_data.ch_lx*800;
     speed_vector[2] = rc_data.ch_rx*1200;
 
+    //逆解出各轮电机速度
     mecanum_inverse_kinematics(speed_vector,wheel_vel);
     wheel_control_fl->set_target(wheel_vel[0]);
     wheel_control_fr->set_target(wheel_vel[1]);
     wheel_control_br->set_target(wheel_vel[2]);
     wheel_control_bl->set_target(wheel_vel[3]);
 
+    //当底盘从无力变为有力时，开始关节校准
     if(last_chassis_mode != chassis_mode && chassis_mode == RC_CONTROL)
     {
         joint_cali_start();
     }
 
-    if(joint_cali_flag)
+    if(joint_cali_flag)//处于校准状态
     {
         joint_cali_set_control();
     }
@@ -380,6 +395,7 @@ void chassis_set_control()
     last_chassis_mode = chassis_mode;
 }
 
+//校准时，关节电机发送恒扭矩
 void joint_cali_control()
 {
     left_side_joint_motor_drv->send_torque(2);
@@ -395,6 +411,7 @@ void joint_normal_control()
     right_side_joint_control->control(0.01f);
 }
 
+//控制关节
 void joint_control()
 {
     if(joint_cali_flag)
@@ -407,6 +424,7 @@ void joint_control()
     }
 }
 
+//底盘无力
 void chassis_zero_force()
 {
     wheel_motor_fl->send_torque(0.0f);
@@ -420,13 +438,16 @@ pyro::power_control_drv_t& power_controller = pyro::power_control_drv_t::get_ins
 float control_torque[4]={};
 pyro::power_control_drv_t::motor_data_t _motor_data[4];
 
+//底盘功控
 void chassis_power_control()
 {
+    //获取未进行功控前的扭矩电流
     _motor_data[0].torque_cmd = control_torque[0];
     _motor_data[1].torque_cmd = control_torque[1];
     _motor_data[2].torque_cmd = control_torque[2];
     _motor_data[3].torque_cmd = control_torque[3];
 
+    //获取未进行功控前的扭矩转速
     _motor_data[0].gyro = wheel_motor_current_rotate[0];
     _motor_data[1].gyro = wheel_motor_current_rotate[1];
     _motor_data[2].gyro = wheel_motor_current_rotate[2];
@@ -434,8 +455,10 @@ void chassis_power_control()
 
     for(int i = 1; i <= 4; i++)
     {
+        //功率预测
         _motor_data[i-1].power_predict = power_controller.motor_power_predict(i,_motor_data[i-1].torque_cmd,_motor_data[i-1].gyro);
     }
+    //计算功率控制后扭矩电流
     power_controller.calculate_restricted_torques(_motor_data,4,110);
     for(int i = 0; i < 4; i++)
     {
@@ -454,7 +477,7 @@ void chassis_rc_control()
     control_torque[2] = wheel_control_br->control(0.01f);
     control_torque[3] = wheel_control_bl->control(0.01f);
 
-    chassis_power_control();
+    // chassis_power_control();//不注释为限功率，注释为无工控
 
     wheel_motor_fl->send_torque(control_torque[0]);
     wheel_motor_fr->send_torque(control_torque[1]);
@@ -474,6 +497,7 @@ extern "C" void engineer_chassis_mission(void const *argument)
     motor_torque_topic_id = global_databoard->get_topic_id("motor_torque");
     motor_rotate_topic_id = global_databoard->get_topic_id("motor_rotate");
 
+    //设定各轮电机id及pid以及正反
     wheel_motor_fl = new pyro::dji_m3508_motor_drv_t(pyro::dji_motor_tx_frame_t::id_1,pyro::can_hub_t::can1);
     rot_pid_fl = new pyro::pid_t(0.4f,0.0f,0.0f,0.0f,10.0f);
     wheel_control_fl = new pyro::wheel_control_t(wheel_motor_fl,rot_pid_fl);
@@ -494,6 +518,7 @@ extern "C" void engineer_chassis_mission(void const *argument)
     wheel_control_bl = new pyro::wheel_control_t(wheel_motor_bl,rot_pid_bl);
     wheel_control_bl->set_forward();
 
+    //设置功率控制器的系数
     pyro::power_control_drv_t::motor_coefficient_t motor_coefficient_fl;
     motor_coefficient_fl.k1 = 0.0115f;
     motor_coefficient_fl.k2 = 0.0391f;
@@ -522,6 +547,7 @@ extern "C" void engineer_chassis_mission(void const *argument)
     motor_coefficient_br.k4 = -4.8325f;
     power_controller.set_motor_coefficient(3,motor_coefficient_br);
 
+    //初始化关节电机
     left_side_joint_motor_drv = new pyro::dm_motor_drv_t(0x02,0x03,pyro::can_hub_t::can2);
     left_side_joint_motor_drv->set_position_range(-10,10);
     left_side_joint_motor_drv->set_rotate_range(-20,20);
@@ -556,6 +582,7 @@ extern "C" void engineer_chassis_mission(void const *argument)
     vTaskDelay(1);
     for(;;)
     {
+        //小丑代码
         left_side_joint_motor_drv->update_feedback();
         right_side_joint_motor_drv->update_feedback();
 
@@ -600,13 +627,13 @@ extern "C" void engineer_chassis_mission(void const *argument)
         if(chassis_mode == ZERO_FORCE)
         {
             chassis_zero_force();
-            left_side_joint_motor_drv->send_torque(0);
-            right_side_joint_motor_drv->send_torque(0);
+            // left_side_joint_motor_drv->send_torque(0);
+            // right_side_joint_motor_drv->send_torque(0);
         }
         else if(chassis_mode == RC_CONTROL)
         {
             chassis_rc_control();
-            joint_control();
+            // joint_control();
         }
         vTaskDelay(1);
     }
