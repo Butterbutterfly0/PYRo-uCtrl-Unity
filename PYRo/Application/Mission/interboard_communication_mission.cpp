@@ -61,9 +61,10 @@ void upper_board_tx_frame_update()
     float magazine_angle = 0;
     upper_board_tx_frame.sw_l = (uint8_t)(rc_data->rc.s_l.state);
     upper_board_tx_frame.sw_r = (uint8_t)(rc_data->rc.s_r.state);
+    float speed_gain = rc_data->key.ctrl.state ? 0.05 : 1;
     if(rc_data->key.a.state == 1 || rc_data->key.d.state == 1)
     {
-        upper_board_tx_frame.chassis_vx = (int16_t)(rc_data->key.d.state - rc_data->key.a.state)*1000;
+        upper_board_tx_frame.chassis_vx = (int16_t)(rc_data->key.d.state - rc_data->key.a.state)*1000*speed_gain;
     }
     else
     {
@@ -72,16 +73,16 @@ void upper_board_tx_frame_update()
 
     if(rc_data->key.w.state == 1 || rc_data->key.s.state == 1)
     {
-        upper_board_tx_frame.chassis_vy = (int16_t)(rc_data->key.w.state - rc_data->key.s.state)*1000;
+        upper_board_tx_frame.chassis_vy = (int16_t)(rc_data->key.w.state - rc_data->key.s.state)*1000*speed_gain;
     }
     else
     {
         upper_board_tx_frame.chassis_vy = (int16_t)(rc_data->rc.ch_ly*1000);
     }
     
-    if(rc_data->mouse.x != 0.0f)
+    if(rc_data->key.q.state == 1 || rc_data->key.e.state == 1)
     {
-        upper_board_tx_frame.chassis_wz = (int16_t)(rc_data->mouse.x*400000);
+        upper_board_tx_frame.chassis_wz = (int16_t)((rc_data->key.e.state-rc_data->key.q.state)*1000*speed_gain);
     }
     else
     {

@@ -17,8 +17,8 @@ void arm_fixed_motion_t::bind(float motion_slice[][8], uint32_t stage_num)
 
 void arm_fixed_motion_t::reset()
 {
-    _motion_current_stage = -1;
-    _motion_transition_state = Not_transition;
+    _motion_current_stage = -1;//不在任意阶段
+    _motion_transition_state = Not_transition;//动作未开始
 }
 
 void arm_fixed_motion_t::start_motion()
@@ -30,20 +30,20 @@ void arm_fixed_motion_t::start_motion()
 
 bool arm_fixed_motion_t::update_motion(float current_period)
 {
-    bool ret = false;
+    bool ret = false;//不需要切换阶段
     if(_motion_transition_state == Transition_running)
     {
-        if(current_period>=_now_slice[0])
+        if(current_period>=_now_slice[0])//当前计时器时间大于当前切片的过渡时间
         {
-            _motion_current_stage++;
-            if(_motion_current_stage>=_motion_total_stage)
+            _motion_current_stage++;//阶段数加1
+            if(_motion_current_stage>=_motion_total_stage)//当前阶段大于总阶段数
             {
-                _motion_transition_state = Transition_end;
+                _motion_transition_state = Transition_end;//动作完成
             }
             else
             {
-                ret = true;
-                memcpy(_now_slice,_motion_slice[_motion_current_stage],sizeof(float)*8);
+                ret = true;//动作未完成，进需要切换动作的下一个阶段
+                memcpy(_now_slice,_motion_slice[_motion_current_stage],sizeof(float)*8);//拷贝切片
             }
         }
     }
@@ -52,12 +52,12 @@ bool arm_fixed_motion_t::update_motion(float current_period)
 
 bool arm_fixed_motion_t::current_step_over(float current_period)
 {
-    bool ret = false;
+    bool ret = false;//判断当前阶段是否完成
     if(_motion_transition_state == Transition_running)
     {
         if(current_period>=_now_slice[0])
         {
-            ret = true;
+            ret = true;//当前阶段完成
         }
     }
     return ret;
@@ -80,7 +80,8 @@ void arm_fixed_motion_group_t::start_motion(float current_position[6])
     float slice[7];
     _now_motion ->start_motion();
     _now_motion ->get_motion_slice(slice);
-    _motion_transition.init(slice[0],current_position,slice+1);
+    // _motion_transition.init(slice[0],current_position,slice+1);
+    //开始动作，并获取切片，初始化动作过渡器(无用，现在实际上是用的同一个)
 }
 
 bool arm_fixed_motion_group_t::update_motion(float current_period)
@@ -112,14 +113,16 @@ void arm_fixed_motion_group_t::add_motion(arm_motion_e motion_id,float motion_sl
     {
         return;
     }
+    //可添加的动作数不超过16，超过16则无法添加
     _motion_list[_motion_list_num].bind(motion_slice,stage_num);
     _motion_list_name[_motion_list_num] = motion_id;
     _motion_list_num++;
+    //添加动作
 }
 
 void arm_fixed_motion_group_t::select_motion(arm_motion_e motion)
 {
-    if(motion==none_motion)
+    if(motion==none_motion)//不存在的动作
     {
         _now_motion = nullptr;
         _now_motion_id = none_motion;
@@ -134,6 +137,7 @@ void arm_fixed_motion_group_t::select_motion(arm_motion_e motion)
             return;
         }
     }
+    //遍历列表选择动作
 }
 
 bool arm_fixed_motion_group_t::motion_over()

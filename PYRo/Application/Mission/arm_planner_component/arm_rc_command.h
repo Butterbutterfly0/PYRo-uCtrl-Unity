@@ -10,7 +10,7 @@
 
 
 
-// The class is used to individualize the rc logic part from the other part 
+// 该模块用于读取遥控器数据并进行对应的状态切换
 class arm_rc_command_t
 {
     public:

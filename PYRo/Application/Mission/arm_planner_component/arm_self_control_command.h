@@ -6,6 +6,7 @@
 
 #include "engineer_arm_planning_mission.h"
 
+// 该模块的目的为从图传链路获取自控数据
 class arm_self_control_command
 {
     public:

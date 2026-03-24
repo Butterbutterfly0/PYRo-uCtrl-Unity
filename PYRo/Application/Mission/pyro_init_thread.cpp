@@ -3,6 +3,8 @@
 #include "pyro_dwt_drv.h"
 #include "pyro_databoard.h"
 
+#include "tim.h"
+
 extern "C"
 {
     pyro::can_drv_t *can1_drv;
@@ -63,6 +65,13 @@ extern "C"
 
         global_databoard->create_topic("zero_force",pyro::data_type_t::UNSIGNED_INT);
         global_databoard->create_topic("magazine_angle",pyro::data_type_t::FLOAT);
+
+        HAL_GPIO_WritePin(GPIOC, GPIO_PIN_15, GPIO_PIN_SET);
+
+        HAL_TIM_Base_Start(&htim2);
+        HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+
+        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 499);
 
         vTaskDelete(nullptr);
     }

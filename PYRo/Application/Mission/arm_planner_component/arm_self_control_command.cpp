@@ -4,6 +4,7 @@ arm_self_control_command::arm_self_control_command(){}
 
 arm_self_control_command::~arm_self_control_command(){}
 
+//获取topic id
 void arm_self_control_command::bind(pyro::databoard* databoard)
 {
     this->_databoard = databoard;
@@ -15,6 +16,7 @@ void arm_self_control_command::bind(pyro::databoard* databoard)
     _selfcontrol_axis6_id = databoard->get_topic_id("selfcontrol axis6");
 }
 
+//根据topic id读取数据
 void arm_self_control_command::update(user_command_t& user_command)
 {
     uint32_t timestamp;
@@ -26,11 +28,13 @@ void arm_self_control_command::update(user_command_t& user_command)
     _databoard->read(_selfcontrol_axis6_id,(pyro::genenral_data_t*)&(_self_control_command[5]),timestamp);
 }
 
+//拷贝数据
 void arm_self_control_command::get_self_control_command(float xdata[6])
 {
     memcpy(xdata,_self_control_command,sizeof(float)*6);
 }
 
+//获取数据指针
 float * arm_self_control_command::get_self_control_command()
 {
     return _self_control_command;

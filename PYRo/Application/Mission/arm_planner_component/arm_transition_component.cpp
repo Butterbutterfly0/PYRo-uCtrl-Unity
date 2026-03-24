@@ -1,6 +1,9 @@
 #include "arm_transition_component.h"
 #include "pyro_dwt_drv.h"
 
+//初始化轴过渡参数
+//三次多项式插值: sita(t)=a0+a1*t+a2*t^2+a3*t^3
+//先验条件为:sita(0)=start sita(T)=end sita'(0)=0 sita'(T)=0
 void axis_transition_init(transition_param_t* param,float transition_period,float start_angle,float end_angle)
 {
     param->transition_start_pos = start_angle;
@@ -13,6 +16,7 @@ void axis_transition_init(transition_param_t* param,float transition_period,floa
     param->transition_coefficient[3] = 2*(start_angle-end_angle)/transition_period/transition_period/transition_period;
 }
 
+//初始化六个旋转轴过渡参数，并记录时间戳
 void arm_transition_init(arm_transition_t* param, float transition_period, float start_angle[6],float end_angle[6])
 {
     param->transition_start_Tick = xTaskGetTickCount();
@@ -27,7 +31,7 @@ void arm_transition_init(arm_transition_t* param, float transition_period, float
 void arm_transition_update(arm_transition_t* param)
 { 
     // param->transition_current_time = (xTaskGetTickCount()-param->transition_start_Tick)/1000.0f;
-    param->transition_current_time = pyro::dwt_drv_t::get_timeline_ms();
+    param->transition_current_time = pyro::dwt_drv_t::get_timeline_ms()-param->transition_start_Tick;
     float _t = param->transition_current_time;
     float _t2 = _t*_t;
     float _t3 = _t2*_t;
@@ -40,6 +44,7 @@ void arm_transition_update(arm_transition_t* param)
     }
 }
 
+//构造函数
 value_interpolation_t::value_interpolation_t()
 {
     _interpolation_start_value = 0.0f;
@@ -53,6 +58,7 @@ value_interpolation_t::value_interpolation_t()
 
 value_interpolation_t::~value_interpolation_t(){}
 
+//初始化插值参数
 void value_interpolation_t::init(float transition_period,float start_value,float end_value)
 {
     _interpolation_period = transition_period;
@@ -138,7 +144,7 @@ bool motion_transition_t::transition_timeout() const
     return _transition_current_period>=_transition_total_period;
 }
 
-void motion_transition_t::recover_from_pasuse()
+void motion_transition_t::recover_from_pasuse()//从暂停中恢复需重设一次时间戳
 {
     _transition_start_Tick = pyro::dwt_drv_t::get_timeline_ms()-_transition_current_period*1000.0f;
 }
