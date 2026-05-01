@@ -166,32 +166,33 @@ void vt03_drv_t::check_ctrl(key_t &key, const uint8_t raw_state)
 {
     key_t temp_key = {};
     const auto state     = static_cast<key_ctrl_t>(raw_state);
-    if (key_ctrl_t::KEY_RELEASED == state)
-    {
-        temp_key.ctrl = key_ctrl_t::KEY_RELEASED;
-        temp_key.time = 0;
-    }
-    else if (key_ctrl_t::KEY_PRESSED == state)
-    {
-        if (key_ctrl_t::KEY_RELEASED == key.ctrl)
-        {
-            temp_key.time = key.time + 14;
-            if (temp_key.time > 40)
-            {
-                temp_key.ctrl = key_ctrl_t::KEY_PRESSED;
-            }
-        }
-        else if (key_ctrl_t::KEY_PRESSED == key.ctrl)
-        {
-            temp_key.time = key.time + 14;
-            if (temp_key.time > 160)
-            {
-                temp_key.ctrl = key_ctrl_t::KEY_HOLD;
-                temp_key.time = 0;
-            }
-        }
-    }
-    key = temp_key;
+    key.state = raw_state;
+    // if (key_ctrl_t::KEY_RELEASED == state)
+    // {
+    //     temp_key.ctrl = key_ctrl_t::KEY_RELEASED;
+    //     temp_key.time = 0;
+    // }
+    // else if (key_ctrl_t::KEY_PRESSED == state)
+    // {
+    //     if (key_ctrl_t::KEY_RELEASED == key.ctrl)
+    //     {
+    //         temp_key.time = key.time + 14;
+    //         if (temp_key.time > 40)
+    //         {
+    //             temp_key.ctrl = key_ctrl_t::KEY_PRESSED;
+    //         }
+    //     }
+    //     else if (key_ctrl_t::KEY_PRESSED == key.ctrl)
+    //     {
+    //         temp_key.time = key.time + 14;
+    //         if (temp_key.time > 160)
+    //         {
+    //             temp_key.ctrl = key_ctrl_t::KEY_HOLD;
+    //             temp_key.time = 0;
+    //         }
+    //     }
+    // }
+    // key = temp_key;
 }
 
 /* Data Processing - Unpack --------------------------------------------------*/

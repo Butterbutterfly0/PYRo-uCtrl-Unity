@@ -138,7 +138,7 @@ class axis_control_t
             }
             else
             {
-                _target_rot = _pos_pid->calculate(rot_angle_correction_pi(_feedback_pos,_target_pos,PI,-PI),_feedback_pos);
+                _target_rot = _pos_pid->calculate(rot_angle_correction_pi(_feedback_pos,_target_pos,PI,-PI),_feedback_pos);//有蛊
                 // _target_rot=_pos_pid->calculate(_target_pos,_feedback_pos);
             }
             _control_value = _rot_pid->calculate(_target_rot,_feedback_rot);
@@ -231,7 +231,7 @@ void engineer_arm_init()
     axis1->enable_constraint();
     axis1->set_upper_limit(pyro::PI);
     axis1->set_lower_limit(-2.1599);
-    axis1->set_feedback_pos_offset(0.6461);
+    axis1->set_feedback_pos_offset(0.69169);
 
     //初始化R2
     pyro::pid_t *axis2_pos_pid = new pyro::pid_t(20,0,0.0,20.0,150);
@@ -245,8 +245,8 @@ void engineer_arm_init()
     axis2 = new pyro::axis_control_t(axis2_motor,axis2_pos_pid,axis2_rot_pid);
     axis2->enable_constraint();
     axis2->set_upper_limit(1);
-    axis2->set_lower_limit(-0.3);
-    axis2->set_feedback_pos_offset(-2.3022);
+    axis2->set_lower_limit(-0.26);
+    axis2->set_feedback_pos_offset(-2.3293);
 
     //初始化R3
     pyro::pid_t *axis3_pos_pid = new pyro::pid_t(15,0.0,0.0,0.0,160);
@@ -258,8 +258,8 @@ void engineer_arm_init()
     axis3 = new pyro::axis_control_t(axis3_motor,axis3_pos_pid,axis3_rot_pid);
     axis3->enable_constraint();
     axis3->set_upper_limit(1.35);
-    axis3->set_lower_limit(-0.3);
-    axis3->set_feedback_pos_offset(-0.2162);
+    axis3->set_lower_limit(-1.2);
+    axis3->set_feedback_pos_offset(-0.219);
 
     //初始化R4，注意R4没有限位是一个自由旋转关节
     pyro::pid_t *axis4_pos_pid = new pyro::pid_t(15.7,0,0.0,6,200);
@@ -272,7 +272,7 @@ void engineer_arm_init()
     axis4->disable_constraint();
     // axis4->set_upper_limit(pyro::PI);
     // axis4->set_lower_limit(-pyro::PI);
-    axis4->set_feedback_pos_offset(1.548);
+    axis4->set_feedback_pos_offset(-0.809);
 
 
     // pyro::pid_t *axis5_pos_pid = new pyro::pid_t(6.3,0,0.0,10,30);
@@ -289,7 +289,7 @@ void engineer_arm_init()
     axis5->enable_constraint();
     axis5->set_upper_limit(pyro::PI/2);
     axis5->set_lower_limit(-pyro::PI/2);
-    axis5->set_feedback_pos_offset(1.86);
+    axis5->set_feedback_pos_offset(2.482);
 
     //初始化R6
     axis6_pos_pid = new pyro::pid_t(9,0.0,0.0,0.0,200);
@@ -302,7 +302,7 @@ void engineer_arm_init()
     axis6->enable_constraint();
     axis6->set_upper_limit(pyro::PI/2);
     axis6->set_lower_limit(-pyro::PI/2);
-    axis6->set_feedback_pos_offset(2.9030);
+    axis6->set_feedback_pos_offset(2.7755);
 
     //初始化末端
     end_pos_pid = new pyro::pid_t(9,0.0,0.0,0,200);
@@ -316,6 +316,9 @@ void engineer_arm_init()
     end_axis->set_upper_limit(pyro::PI);
     end_axis->set_lower_limit(-pyro::PI);
     end_axis->set_feedback_pos_offset(-0.3560);
+
+    while(rc_planning_sem == nullptr)
+        vTaskDelay(1);
 
 }
 
@@ -390,6 +393,15 @@ void enigneer_arm_update()
     xSemaphoreTake(rc_planning_sem, portMAX_DELAY);
     //获取锁
     memcpy(control_target_param->axis_current_pos,axis_current_pos,sizeof(float)*6);
+    bool arm_is_ready = true;
+    arm_is_ready &= axis1_motor->is_enable();
+    arm_is_ready &= axis2_motor->is_enable();
+    arm_is_ready &= axis3_motor->is_enable();
+    arm_is_ready &= axis4_motor->is_enable();
+    arm_is_ready &= axis5_motor->is_enable();
+    arm_is_ready &= axis6_motor->is_enable();
+    arm_is_ready &= end_motor->is_enable();
+    control_target_param->arm_is_ready = arm_is_ready;
     xSemaphoreGive(rc_planning_sem);
     //释放锁
 }
@@ -446,33 +458,83 @@ void engineer_arm_zeroforce()
     end_axis->reset_pid();
 
     //发送零力矩
-    axis1_motor->send_torque(0);
-    axis2_motor->send_torque(0);
-    axis3_motor->send_torque(0);
-    axis4_motor->send_torque(0);
-    axis5_motor->send_torque(0);
-    axis6_motor->send_torque(0);
-    end_motor->send_torque(0);
+    if(axis1_motor->is_enable())
+        axis1_motor->disable();
+    else
+        axis1_motor->send_torque(0);
+
+    if(axis2_motor->is_enable())
+        axis2_motor->disable();
+    else
+        axis2_motor->send_torque(0);
+
+    if(axis3_motor->is_enable())
+        axis3_motor->disable();
+    else
+        axis3_motor->send_torque(0);
+
+    if(axis4_motor->is_enable())
+        axis4_motor->disable();
+    else
+        axis4_motor->send_torque(0);
+
+    if(axis5_motor->is_enable())
+        axis5_motor->disable();
+    else
+        axis5_motor->send_torque(0);
+
+    if(axis6_motor->is_enable())
+        axis6_motor->disable();
+    else
+        axis6_motor->send_torque(0);
+
+    if(end_motor->is_enable())
+        end_motor->disable();
+    else
+        end_motor->send_torque(0);
 }
 
 void engineer_arm_control()
 {
+    if(!axis1_motor->is_enable())
+        axis1_motor->enable();
+    else
+        axis1->control(0.005);
     
-    axis1->control(0.005);
-    axis2->control(0.005);
-    // axis3_motor->send_torque(0);
-    // axis4_motor->send_torque(0);
-    axis3->control(0.005);
-    axis4->control(0.005);
-    axis5->control(0.005);
-    axis6->control(0.005);
-    // end_motor->send_torque(0);
-    end_axis->control(0.005);
+    if(!axis2_motor->is_enable())
+        axis2_motor->enable();
+    else
+        axis2->control(0.005);
+
+    if(!axis3_motor->is_enable())
+        axis3_motor->enable();
+    else
+        axis3->control(0.005);
+
+    if(!axis4_motor->is_enable())
+        axis4_motor->enable();
+    else
+        axis4->control(0.005);
+
+    if(!axis5_motor->is_enable())
+        axis5_motor->enable();
+    else
+        axis5->control(0.005);
+    
+    if(!axis6_motor->is_enable())
+        axis6_motor->enable();
+    else
+        axis6->control(0.005);
+
+    if(!end_motor->is_enable())
+        end_motor->enable();
+    else
+        end_axis->control(0.005);
 }
 
 //质量参数，该参数我当时调的时候没有做仿真去算，而是调试得来
 constexpr float axis2_m = 10.5;
-constexpr float axis3_m = 11;
+constexpr float axis3_m = 8;
 constexpr float axis4_m = 0.05;
 constexpr float axis5_m = 0.3;
 
@@ -535,22 +597,7 @@ void engineer_arm_mission(void* args)
     axis_current_pos_id[5] = global_databoard->get_topic_id("axis6_current_pos");
 
     //固定延时，等达妙电机上电完毕之后再对电机进行使能
-    vTaskDelay(1500);
-
-    axis1_motor->enable();
-    vTaskDelay(1);
-    axis2_motor->enable();
-    vTaskDelay(1);
-    axis3_motor->enable();
-    vTaskDelay(1);
-    axis4_motor->enable();
-    vTaskDelay(1);
-    axis5_motor->enable();
-    vTaskDelay(1);
-    axis6_motor->enable();
-    vTaskDelay(1);
-    end_motor->enable();
-    vTaskDelay(1);
+    
 
     for(;;)
     {

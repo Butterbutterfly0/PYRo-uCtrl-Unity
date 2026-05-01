@@ -17,12 +17,21 @@ class arm_rc_command_t
         arm_rc_command_t();
         ~arm_rc_command_t();
         void bind_dr16(pyro::rc_drv_t* dr16_drv);
+        void bind_vt03(pyro::rc_drv_t* vt03_drv);
+        void dr16_update(specific_control_mode_t& specific_control_mode,
+            transition_state_t& transition_state,
+        user_command_t& user_command);
+        void vt03_update(specific_control_mode_t& specific_control_mode,
+            transition_state_t& transition_state,
+        user_command_t& user_command);
         void update(specific_control_mode_t& specific_control_mode,
             transition_state_t& transition_state,
         user_command_t& user_command);
     private:
         pyro::rc_drv_t* dr16_drv;
-        const  pyro::dr16_drv_t::dr16_ctrl_t *_rc_data;
+        pyro::rc_drv_t* vt03_drv;
+        const  pyro::dr16_drv_t::dr16_ctrl_t *_dr16_rc_data;
+        const  pyro::vt03_drv_t::vt03_ctrl_t *_vt03_rc_data;
         
     };
 

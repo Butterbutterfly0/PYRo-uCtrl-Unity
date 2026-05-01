@@ -34,6 +34,7 @@ typedef struct
 {
     control_mode_t control_mode;
     float axis_current_pos[6];
+    bool arm_is_ready;
     float axis_target_pos[6];
     gripper_mode_e gripper_mode;
     bool hold_gripper;

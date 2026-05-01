@@ -24,7 +24,7 @@ status_t pyro::dm_motor_drv_t::enable()
     std::array<uint8_t, 8> data;
     data.fill(0xFF);
     data[7] = 0xfc;
-    _enable = true;
+    // _enable = true;
     if(PYRO_OK!=_can_drv->send_msg(_can_id, data.data()))
         return PYRO_ERROR;
     return PYRO_OK;
@@ -34,8 +34,8 @@ status_t dm_motor_drv_t::disable()
 {
     std::array<uint8_t, 8> data;
     data.fill(0xFF);
-    data[7] = 0xfc;
-    _enable = false;
+    data[7] = 0xfd;
+    // _enable = false;
     if(PYRO_OK!=_can_drv->send_msg(_can_id, data.data()))
         return PYRO_ERROR;
     return PYRO_OK;
@@ -60,6 +60,11 @@ status_t pyro::dm_motor_drv_t::update_feedback()
     std::array<uint8_t, 8> data;
     _feedback_msg->get_data(data);
     _error_code = static_cast<error_code>(((data[0]>>4)&0x0f));
+    switch(_error_code)
+    {
+        case error_code::ok:_enable = true;break;
+        default:_enable = false;break;
+    }
     uint16_t position = ((uint16_t)((data[1] << 8) | (data[2])));
     uint16_t rotate   = ((uint16_t)((data[3] << 4) | ((data[4] >> 4) & 0x0f)));
     uint16_t torque =

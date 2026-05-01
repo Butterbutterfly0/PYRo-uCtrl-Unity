@@ -68,6 +68,7 @@ void arm_planner_t::init()
 {
     //绑定遥控器命令
     _arm_rc_command.bind_dr16(pyro::rc_hub_t::get_instance(pyro::rc_hub_t::DR16));
+    _arm_rc_command.bind_vt03(pyro::rc_hub_t::get_instance(pyro::rc_hub_t::VT03));
     //等待数据面板初始化完成
     while(global_databoard == nullptr)
     {
@@ -92,6 +93,7 @@ void arm_planner_t::update_async()
     //拷贝机械臂的当前位置
     xSemaphoreTake(rc_planning_sem, portMAX_DELAY);
     memcpy(control_target_param_buffer->axis_current_pos,control_target_param->axis_current_pos,sizeof(float)*6);
+    control_target_param_buffer->arm_is_ready = control_target_param->arm_is_ready;
     xSemaphoreGive(rc_planning_sem);    
     memcpy(_axis_current_pos,control_target_param_buffer->axis_current_pos,sizeof(float)*6);
 }
@@ -109,7 +111,7 @@ void arm_planner_t::transition_process()
     float time_spend = 3;
 
     //判断转换状态
-    if(_transition_state == Transition_start)
+    if(_transition_state == Transition_start && control_target_param_buffer->arm_is_ready)
     {
         //开始过渡
         //根据当前具体的控制状态确定过渡的结束位置
@@ -163,7 +165,7 @@ void arm_planner_t::transition_process()
 //处理固定动作
 void arm_planner_t::fixed_motion_process()
 {
-    float slice[7];
+    float slice[8];
     if(_specific_control_mode == MOTION_Start)
     {
         //动作开始
@@ -192,10 +194,10 @@ void arm_planner_t::fixed_motion_process()
         }
         if(_arm_fixed_motion_group.update_motion(_motion_transition.get_transition_current_period()))//判断当前动作的当前阶段是否完成
         {
-            //如果完成则获取动作下一阶段的切片，并初始化过渡参数
+            // 如果完成则获取动作下一阶段的切片，并初始化过渡参数
             _arm_fixed_motion_group.get_motion_slice(slice);
             _motion_transition.init(slice[0],_axis_target_pos,slice+1);
-            if(slice[7] == 1)
+            if(slice[7] == 1.0f)
                 _user_command.hold_gripper = true;
             else
                 _user_command.hold_gripper = false;
@@ -338,6 +340,7 @@ extern "C" void engineer_arm_planning_mission(void* args)
     arm_planner._arm_fixed_motion_group.add_motion(arm_grip_energy_unit_60,arm_grip_energy_unit_60_motion,arm_grip_energy_unit_60_motion_stage_num);
     arm_planner._arm_fixed_motion_group.add_motion(arm_grip_energy_unit_120,arm_grip_energy_unit_120_motion,arm_grip_energy_unit_120_motion_stage_num);
     arm_planner._arm_fixed_motion_group.add_motion(arm_grip_energy_unit_180,arm_grip_energy_unit_180_motion,arm_grip_energy_unit_180_motion_stage_num);
+    arm_planner._arm_fixed_motion_group.add_motion(arm_grip_energy_unit_240,arm_grip_energy_unit_240_motion,arm_grip_energy_unit_240_motion_stage_num);
     arm_planner._arm_fixed_motion_group.add_motion(arm_push_energy_unit,arm_push_energy_unit_motion,arm_push_energy_unit_motion_stage_num);
     arm_planner._arm_fixed_motion_group.add_motion(arm_pop_energy_unit,arm_pop_energy_unit_motion,arm_pop_energy_unit_motion_stage_num);
 

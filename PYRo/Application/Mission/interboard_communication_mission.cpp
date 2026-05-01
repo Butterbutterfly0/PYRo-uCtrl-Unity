@@ -8,6 +8,7 @@
 
 extern pyro::databoard* global_databoard;
 static pyro::rc_drv_t* dr16_drv;
+static pyro::rc_drv_t* vt03_drv;
 
 typedef struct __attribute__((packed))
 {
@@ -48,48 +49,96 @@ static uint16_t crc16_append(uint8_t *data, uint16_t len)
     return crc;
 }
 
-const static  pyro::dr16_drv_t::dr16_ctrl_t *rc_data;
+const static  pyro::dr16_drv_t::dr16_ctrl_t *dr16_rc_data;
+const static  pyro::vt03_drv_t::vt03_ctrl_t *vt03_rc_data;
 
 uint32_t zero_force_id = 0;
 uint32_t magazine_angle_id = 0;
 
 void upper_board_tx_frame_update()
 {
-    rc_data = static_cast<const pyro::dr16_drv_t::dr16_ctrl_t *>(dr16_drv->read()); 
+    dr16_rc_data = static_cast<const pyro::dr16_drv_t::dr16_ctrl_t *>(dr16_drv->read()); 
+    vt03_rc_data = static_cast<const pyro::vt03_drv_t::vt03_ctrl_t *>(vt03_drv->read());
     uint32_t zero_force = 0;
     uint32_t timestamp = 0;
     float magazine_angle = 0;
-    upper_board_tx_frame.sw_l = (uint8_t)(rc_data->rc.s_l.state);
-    upper_board_tx_frame.sw_r = (uint8_t)(rc_data->rc.s_r.state);
-    float speed_gain = rc_data->key.ctrl.state ? 0.05 : 1;
-    if(rc_data->key.a.state == 1 || rc_data->key.d.state == 1)
+    if(dr16_drv->check_online())
     {
-        upper_board_tx_frame.chassis_vx = (int16_t)(rc_data->key.d.state - rc_data->key.a.state)*1000*speed_gain;
-    }
-    else
-    {
-        upper_board_tx_frame.chassis_vx = (int16_t)(rc_data->rc.ch_lx*1000);
-    }
+        upper_board_tx_frame.sw_l = (uint8_t)(dr16_rc_data->rc.s_l.state);
+        upper_board_tx_frame.sw_r = (uint8_t)(dr16_rc_data->rc.s_r.state);
+        float speed_gain = dr16_rc_data->key.ctrl.state ? 0.05 : 1;
+        if(dr16_rc_data->key.a.state == 1 || dr16_rc_data->key.d.state == 1)
+        {
+            upper_board_tx_frame.chassis_vx = (int16_t)(dr16_rc_data->key.d.state - dr16_rc_data->key.a.state)*1000*speed_gain;
+        }
+        else
+        {
+            upper_board_tx_frame.chassis_vx = (int16_t)(dr16_rc_data->rc.ch_lx*1000);
+        }
 
-    if(rc_data->key.w.state == 1 || rc_data->key.s.state == 1)
-    {
-        upper_board_tx_frame.chassis_vy = (int16_t)(rc_data->key.w.state - rc_data->key.s.state)*1000*speed_gain;
+        if(dr16_rc_data->key.w.state == 1 || dr16_rc_data->key.s.state == 1)
+        {
+            upper_board_tx_frame.chassis_vy = (int16_t)(dr16_rc_data->key.w.state - dr16_rc_data->key.s.state)*1000*speed_gain;
+        }
+        else
+        {
+            upper_board_tx_frame.chassis_vy = (int16_t)(dr16_rc_data->rc.ch_ly*1000);
+        }
+        
+        if(dr16_rc_data->key.q.state == 1 || dr16_rc_data->key.e.state == 1)
+        {
+            upper_board_tx_frame.chassis_wz = (int16_t)((dr16_rc_data->key.e.state-dr16_rc_data->key.q.state)*1000*speed_gain);
+        }
+        else
+        {
+            upper_board_tx_frame.chassis_wz = (int16_t)(dr16_rc_data->rc.ch_rx*1000);
+        }
     }
-    else
+    else if(vt03_drv->check_online())
     {
-        upper_board_tx_frame.chassis_vy = (int16_t)(rc_data->rc.ch_ly*1000);
+        if(vt03_rc_data->rc.gear.state == pyro::vt03_drv_t::gear_state_t::GEAR_LEFT)
+        {
+            upper_board_tx_frame.sw_r = (uint8_t)(pyro::dr16_drv_t::sw_state_t::SW_UP);
+        }
+        else if(vt03_rc_data->rc.gear.state == pyro::vt03_drv_t::gear_state_t::GEAR_MID)
+        {
+            upper_board_tx_frame.sw_r = (uint8_t)(pyro::dr16_drv_t::sw_state_t::SW_MID);
+        }
+        else if(vt03_rc_data->rc.gear.state == pyro::vt03_drv_t::gear_state_t::GEAR_RIGHT)
+        {
+            upper_board_tx_frame.sw_r = (uint8_t)(pyro::dr16_drv_t::sw_state_t::SW_DOWN);
+        }
+        float speed_gain = vt03_rc_data->key.ctrl.state ? 0.05 : 1;
+        if(vt03_rc_data->key.a.state == 1 || vt03_rc_data->key.d.state == 1)
+        {
+            upper_board_tx_frame.chassis_vx = (int16_t)(vt03_rc_data->key.d.state - vt03_rc_data->key.a.state)*1000*speed_gain;
+        }
+        else
+        {
+            upper_board_tx_frame.chassis_vx = (int16_t)(vt03_rc_data->rc.ch_ly*1000);
+        }
+
+        if(vt03_rc_data->key.w.state == 1 || vt03_rc_data->key.s.state == 1)
+        {
+            upper_board_tx_frame.chassis_vy = (int16_t)(vt03_rc_data->key.w.state - vt03_rc_data->key.s.state)*1000*speed_gain;
+        }
+        else
+        {
+            upper_board_tx_frame.chassis_vy = (int16_t)(vt03_rc_data->rc.ch_lx*1000);
+        }
+        
+        if(vt03_rc_data->key.q.state == 1 || vt03_rc_data->key.e.state == 1)
+        {
+            upper_board_tx_frame.chassis_wz = (int16_t)((vt03_rc_data->key.e.state-vt03_rc_data->key.q.state)*1000*speed_gain);
+        }
+        else
+        {
+            upper_board_tx_frame.chassis_wz = (int16_t)(vt03_rc_data->rc.ch_rx*1000);
+        }
     }
     
-    if(rc_data->key.q.state == 1 || rc_data->key.e.state == 1)
-    {
-        upper_board_tx_frame.chassis_wz = (int16_t)((rc_data->key.e.state-rc_data->key.q.state)*1000*speed_gain);
-    }
-    else
-    {
-         upper_board_tx_frame.chassis_wz = (int16_t)(rc_data->rc.ch_rx*1000);
-    }
    
-    upper_board_tx_frame.rc_ch_ry = (int16_t)(rc_data->rc.ch_ry*1000);
+    // upper_board_tx_frame.rc_ch_ry = (int16_t)(rc_data->rc.ch_ry*1000);
     global_databoard->read(zero_force_id,(pyro::genenral_data_t*)&zero_force,timestamp);
     upper_board_tx_frame.zero_force = (uint8_t)zero_force;
     global_databoard->read(magazine_angle_id,(pyro::genenral_data_t*)(&upper_board_tx_frame.magazine_angle),timestamp);
@@ -102,6 +151,7 @@ extern "C" void interboard_communication_mission(void* args)
 {
     // osDelay(10);
     dr16_drv = pyro::rc_hub_t::get_instance(pyro::rc_hub_t::DR16);
+    vt03_drv = pyro::rc_hub_t::get_instance(pyro::rc_hub_t::VT03);
     while(global_databoard == nullptr)
     {
         vTaskDelay(1);

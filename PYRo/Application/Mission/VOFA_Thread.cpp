@@ -87,7 +87,7 @@ extern "C" void VOFA_Thread(void *argument)
         // for(int i=0;i<6;i++)
             // vofa->addItem(axis_current_pos[i]);
         vofa->render_and_send();
-        vTaskDelay(1);
+        vTaskDelay(2);
     }
 
 }
