@@ -10,7 +10,7 @@ class dm_motor_drv_t : public motor_base_t // MIT only
   public:
     enum error_code
     {
-        ok                    = 0x00,
+        ok                    = 0x01,
         over_votlage          = 0x08,
         under_voltage         = 0x09,
         over_temperature      = 0x0a,

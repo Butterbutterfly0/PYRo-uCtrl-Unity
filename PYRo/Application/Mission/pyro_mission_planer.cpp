@@ -7,6 +7,7 @@ extern "C"
     extern void engineer_chassis_mission(void *argument);
     extern void VOFA_Thread(void *argument);
     extern void magazine_mission(void *argument);
+    extern void referee_system_mission(void *argument);
 
 
     void start_mission_planer_task(void const *argument)
@@ -18,6 +19,7 @@ extern "C"
         xTaskCreate(engineer_chassis_mission,"engineer_chassis_mission", 512, nullptr,configMAX_PRIORITIES - 1, nullptr);
         xTaskCreate(VOFA_Thread,"VOFA_Thread", 512, nullptr,configMAX_PRIORITIES - 2, nullptr);
         xTaskCreate(magazine_mission,"magazine_mission", 512, nullptr,configMAX_PRIORITIES - 2, nullptr);
+        xTaskCreate(referee_system_mission,"referee_system_mission", 512, nullptr,configMAX_PRIORITIES - 2, nullptr);
         vTaskDelete(nullptr);
     }
 }

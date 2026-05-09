@@ -23,6 +23,8 @@ typedef struct __attribute__((packed))
     int16_t rc_ch_ry;
     uint8_t zero_force;
     float magazine_angle;
+    uint8_t which_motion;
+    uint8_t which_mine;
     uint16_t crc16;
 } upper_board_tx_frame_t;
 
@@ -70,6 +72,9 @@ bool interboard_communication_callback(uint8_t *buf, uint16_t len,BaseType_t xHi
 }
 static uint32_t rc_sw_l_topic_id,rc_sw_r_topic_id,rc_ch_lx_topic_id,rc_ch_ly_topic_id,rc_ch_rx_topic_id,rc_ch_ry_topic_id;
 static uint32_t zero_force_id,magazine_angle_id;
+
+uint8_t which_mine=1;
+uint8_t which_motion =1;
 extern "C" void interboard_communication_mission(void const *argument)
 {
     while(global_databoard == nullptr)
@@ -118,6 +123,9 @@ extern "C" void interboard_communication_mission(void const *argument)
             *((pyro::genenral_data_t*)&(temp_i)));
             temp_f = ((float)upper_board_tx_frame.magazine_angle);
             global_databoard->write_topic(magazine_angle_id,*((pyro::genenral_data_t*)&(temp_f)));
+
+            which_mine = upper_board_tx_frame.which_mine;
+            which_motion = upper_board_tx_frame.which_motion;
         }
 
         vTaskDelay(1);

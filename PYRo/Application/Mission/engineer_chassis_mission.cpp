@@ -7,6 +7,8 @@
 #include "pyro_algo_pid.h"
 #include "pyro_power_control_drv.h"
 #include <math.h>
+#include "pyro_dwt_drv.h"
+#include "joint_ctrl.h"
 
 extern pyro::databoard* global_databoard; 
 
@@ -192,6 +194,8 @@ class axis_control_t
     
 };
 
+
+
 };
 
 typedef enum
@@ -202,8 +206,98 @@ typedef enum
 chassis_mode_t;
 chassis_mode_t chassis_mode = ZERO_FORCE,last_chassis_mode = ZERO_FORCE;
 
-uint8_t joint_cali_flag = 0;
-uint32_t joint_cali_tick_start,joint_cali_tick_count;
+float joint_increment[4] = {0.0f,0.0f,0.0f,0.0f};
+
+class joint_group_t
+{
+    private:
+        joint_control_t* joints[4];//fl fr bl br
+    public:
+        joint_group_t()
+        {
+            pyro::dji_m3508_motor_drv_t* jm_drv_fl = new pyro::dji_m3508_motor_drv_t(pyro::dji_motor_tx_frame_t::id_1,pyro::can_hub_t::can3);
+            pyro::pid_t *rot_pid_fl = new pyro::pid_t(0.4f,0.0f,0.0f,0.0f,20.0f);
+            pyro::pid_t *pos_pid_fl = new pyro::pid_t(9.5f,0.0f,0.0f,0.0f,80.0f);
+            joints[0] = new joint_control_t(jm_drv_fl,pos_pid_fl,rot_pid_fl);
+            joints[0]->set_direction(-1.0f);
+            joints[0]->set_calibrate_parameters(-30.0f,2.0f,10.0f);
+            joints[0]->set_upper_limit(80);
+            joints[0]->set_lower_limit(0);
+
+            pyro::dji_m3508_motor_drv_t* jm_drv_fr = new pyro::dji_m3508_motor_drv_t(pyro::dji_motor_tx_frame_t::id_2,pyro::can_hub_t::can3);
+            pyro::pid_t *rot_pid_fr = new pyro::pid_t(0.4f,0.0f,0.0f,0.0f,20.0f);
+            pyro::pid_t *pos_pid_fr = new pyro::pid_t(9.5f,0.0f,0.0f,0.0f,80.0f);
+            joints[1] = new joint_control_t(jm_drv_fr,pos_pid_fr,rot_pid_fr);
+            joints[1]->set_direction(1.0f);
+            joints[1]->set_calibrate_parameters(-30.0f,2.0f,10.0f);
+            joints[1]->set_upper_limit(80);
+            joints[1]->set_lower_limit(0);
+
+            pyro::dm_motor_drv_t* jm_drv_bl = new pyro::dm_motor_drv_t(0x02,0x03,pyro::can_hub_t::can2);
+            jm_drv_bl->set_position_range(-pyro::PI,pyro::PI);
+            jm_drv_bl->set_rotate_range(-52,52);
+            jm_drv_bl->set_torque_range(-27,27);
+            pyro::pid_t *rot_pid_bl = new pyro::pid_t(2.0f, 0.005f, 0.0012f, 0.5f, 27.0f);
+            pyro::pid_t *pos_pid_bl = new pyro::pid_t(14.0f, 0.005f, 0.0012f, 0.5f, 52.0f);
+            joints[2] = new joint_control_t(jm_drv_bl,pos_pid_bl,rot_pid_bl);
+            joints[2]->set_direction(-1.0f);
+            joints[2]->set_upper_limit(8);
+            joints[2]->set_lower_limit(0);
+
+
+            pyro::dm_motor_drv_t* jm_drv_br = new pyro::dm_motor_drv_t(0x00,0x01,pyro::can_hub_t::can2);
+            jm_drv_br->set_position_range(-pyro::PI,pyro::PI);
+            jm_drv_br->set_rotate_range(-52,52);
+            jm_drv_br->set_torque_range(-27,27);
+            pyro::pid_t *rot_pid_br = new pyro::pid_t(2.0f, 0.005f, 0.0012f, 0.5f, 27.0f);
+            pyro::pid_t *pos_pid_br = new pyro::pid_t(14.0f, 0.005f, 0.0012f, 0.5f, 52.0f);
+            joints[3] = new joint_control_t(jm_drv_br,pos_pid_br,rot_pid_br);
+            joints[3]->set_upper_limit(8);
+            joints[3]->set_lower_limit(0);
+        }
+        ~joint_group_t(){}
+        void update()
+        {
+            for(int i=0;i<4;i++)
+            {
+                joints[i]->update();
+            }
+        }
+
+        void set_target(float target[4])
+        {
+            for(int i=0;i<4;i++)
+            {
+                joints[i]->increment(target[i]);
+            }
+        }
+        void zero_force()
+        {
+            for(int i=0;i<4;i++)
+            {
+                joints[i]->zero_force();
+            }   
+        }
+        void control()
+        {
+            for(int i=0;i<4;i++)
+            {
+                if(joints[i]->is_calibrate())
+                    joints[i]->calibrate_control();
+                else
+                    joints[i]->normal_control();
+            }
+        }
+        void start_calibrate()
+        {
+            for(int i=0;i<4;i++)
+            {
+                joints[i]->start_calibrate();
+            }
+        }
+};
+
+joint_group_t* joint_group;
 
 
 
@@ -240,6 +334,12 @@ pyro::pid_t *left_side_joint_pos_pid,*right_side_joint_pos_pid;
 pyro::pid_t *left_side_joint_rot_pid,*right_side_joint_rot_pid;
 pyro::axis_control_t *left_side_joint_control,*right_side_joint_control;
 
+
+pyro::dm_motor_drv_t *left_side_front_joint_motor_drv,*right_side_front_joint_motor_drv;
+pyro::pid_t *left_side_front_joint_pos_pid,*right_side_front_joint_pos_pid;
+pyro::pid_t *left_side_front_joint_rot_pid,*right_side_front_joint_rot_pid;
+joint_control_t *left_side_front_joint_control,*right_side_front_joint_control;
+
 float wheel_motor_current_position[4];
 float wheel_motor_current_rotate[4];
 float wheel_motor_current_torque[4];
@@ -274,51 +374,7 @@ bool chassis_rc_solve()
     return true;
 }
 
-//开始关节校准
-void joint_cali_start()
-{
-    joint_cali_flag = 1;
-    joint_cali_tick_start = xTaskGetTickCount();
-    joint_cali_tick_count = 0;
-}
 
-//停止关节校准
-void joint_cali_stop()
-{
-    joint_cali_flag = 0;
-    left_side_joint_control->set_feedback_pos_offset(left_side_joint_motor_drv->get_current_position());
-    right_side_joint_control->set_feedback_pos_offset(right_side_joint_motor_drv->get_current_position());
-    float t = 0;
-    left_side_joint_control->set_target(t);
-    t=0;
-    right_side_joint_control->set_target(t);
-}
-
-//更新关节校准
-void joint_cali_update()
-{
-    if(!joint_cali_flag)
-        return;
-
-    joint_cali_tick_count = xTaskGetTickCount()-joint_cali_tick_start;
-    if(joint_cali_tick_count > 3000)
-    {
-        joint_cali_stop();
-    }
-}
-
-//设定关节校准时的控制量
-void joint_cali_set_control()
-{
-    ;
-}
-
-//设定关节正常控制时的控制量
-void joint_normal_set_control(float increment)
-{
-    left_side_joint_control->increment(-increment);
-    right_side_joint_control->increment(increment);
-}
 
 
 //麦克纳姆轮逆解
@@ -377,52 +433,46 @@ void chassis_set_control()
     wheel_control_br->set_target(wheel_vel[2]);
     wheel_control_bl->set_target(wheel_vel[3]);
 
-    //当底盘从无力变为有力时，开始关节校准
-    if(last_chassis_mode != chassis_mode && chassis_mode == RC_CONTROL)
+    if(static_cast<pyro::dr16_drv_t::sw_state_t>(rc_data.sw_l) == pyro::dr16_drv_t::sw_state_t::SW_UP)
     {
-        joint_cali_start();
+        for(int i = 0; i < 4; i++)
+        {
+            joint_increment[i] = 0.0f;
+        }
+    }
+    else if(static_cast<pyro::dr16_drv_t::sw_state_t>(rc_data.sw_l) == pyro::dr16_drv_t::sw_state_t::SW_MID)
+    {
+        for(int i = 2; i < 4; i++)
+        {
+            joint_increment[i] = 0.0f;
+        }
+        joint_increment[0] = rc_data.ch_ry*0.05f;
+        joint_increment[1] = rc_data.ch_ry*0.05f;
+    }
+    else if(static_cast<pyro::dr16_drv_t::sw_state_t>(rc_data.sw_l) == pyro::dr16_drv_t::sw_state_t::SW_DOWN)
+    {
+        for(int i = 0; i < 2; i++)
+        {
+            joint_increment[i] = 0.0f;
+        }
+        joint_increment[2] = rc_data.ch_ry*0.005f;
+        joint_increment[3] = rc_data.ch_ry*0.005f;
     }
 
-    if(joint_cali_flag)//处于校准状态
-    {
-        joint_cali_set_control();
+    joint_group->set_target(joint_increment);
+
+    //当底盘从无力变为有力时，开始关节校准
+    if(last_chassis_mode == ZERO_FORCE && chassis_mode != ZERO_FORCE){
+        joint_group->start_calibrate();
     }
-    else
-    {
-        joint_normal_set_control(rc_data.ch_ry*0.005);
-    }
+    
     
     last_chassis_mode = chassis_mode;
 }
 
 //校准时，关节电机发送恒扭矩
-void joint_cali_control()
-{
-    left_side_joint_motor_drv->send_torque(2);
-    right_side_joint_motor_drv->send_torque(-2);
-}
 
-void joint_normal_control()
-{
 
-    left_side_joint_control->update();
-    right_side_joint_control->update();
-    left_side_joint_control->control(0.01f);
-    right_side_joint_control->control(0.01f);
-}
-
-//控制关节
-void joint_control()
-{
-    if(joint_cali_flag)
-    {
-        joint_cali_control();
-    }
-    else
-    {
-        joint_normal_control();
-    }
-}
 
 //底盘无力
 void chassis_zero_force()
@@ -477,7 +527,7 @@ void chassis_rc_control()
     control_torque[2] = wheel_control_br->control(0.01f);
     control_torque[3] = wheel_control_bl->control(0.01f);
 
-    // chassis_power_control();//不注释为限功率，注释为无工控
+    chassis_power_control();//不注释为限功率，注释为无工控
 
     wheel_motor_fl->send_torque(control_torque[0]);
     wheel_motor_fr->send_torque(control_torque[1]);
@@ -518,7 +568,7 @@ extern "C" void engineer_chassis_mission(void const *argument)
     wheel_control_bl = new pyro::wheel_control_t(wheel_motor_bl,rot_pid_bl);
     wheel_control_bl->set_forward();
 
-    //设置功率控制器的系数
+    // 设置功率控制器的系数
     pyro::power_control_drv_t::motor_coefficient_t motor_coefficient_fl;
     motor_coefficient_fl.k1 = 0.0115f;
     motor_coefficient_fl.k2 = 0.0391f;
@@ -547,55 +597,12 @@ extern "C" void engineer_chassis_mission(void const *argument)
     motor_coefficient_br.k4 = -4.8325f;
     power_controller.set_motor_coefficient(3,motor_coefficient_br);
 
-    //初始化关节电机
-    left_side_joint_motor_drv = new pyro::dm_motor_drv_t(0x02,0x03,pyro::can_hub_t::can2);
-    left_side_joint_motor_drv->set_position_range(-10,10);
-    left_side_joint_motor_drv->set_rotate_range(-20,20);
-    left_side_joint_motor_drv->set_torque_range(-20,20);
-
-    left_side_joint_rot_pid = new pyro::pid_t(2.0f, 0.005f, 0.0012f, 0.5f, 20.0f);
-    left_side_joint_pos_pid = new pyro::pid_t(14.0f, 0.005f, 0.0012f, 0.5f, 20.0f);
-
-    left_side_joint_control = new pyro::axis_control_t(left_side_joint_motor_drv,left_side_joint_pos_pid,left_side_joint_rot_pid);
-    left_side_joint_control->enable_constraint();
-    left_side_joint_control->set_upper_limit(0);
-    left_side_joint_control->set_lower_limit(-10);
-
-
-    right_side_joint_motor_drv = new pyro::dm_motor_drv_t(0x00,0x01,pyro::can_hub_t::can2);
-    right_side_joint_motor_drv->set_position_range(-10,10);
-    right_side_joint_motor_drv->set_rotate_range(-20,20);
-    right_side_joint_motor_drv->set_torque_range(-20,20);
-
-    right_side_joint_rot_pid = new pyro::pid_t(2.0f, 0.005f, 0.0012f, 0.5f, 20.0f);
-    right_side_joint_pos_pid = new pyro::pid_t(14.0f, 0.005f, 0.0012f, 0.5f, 20.0f);
-
-    right_side_joint_control = new pyro::axis_control_t(right_side_joint_motor_drv,right_side_joint_pos_pid,right_side_joint_rot_pid);
-    right_side_joint_control->enable_constraint();
-    right_side_joint_control->set_upper_limit(10);
-    right_side_joint_control->set_lower_limit(0);
-
-    vTaskDelay(1000);
-    left_side_joint_motor_drv->enable();
-    vTaskDelay(1);
-    right_side_joint_motor_drv->enable();
-    vTaskDelay(1);
+    
+    joint_group = new joint_group_t();
     for(;;)
     {
+        chassis_set_control();
         //小丑代码
-        left_side_joint_motor_drv->update_feedback();
-        right_side_joint_motor_drv->update_feedback();
-
-        joint_motor_current_position[0] = left_side_joint_motor_drv->get_current_position();
-        joint_motor_current_position[1] = right_side_joint_motor_drv->get_current_position();
-
-        joint_motor_current_rotate[0] = left_side_joint_motor_drv->get_current_rotate();
-        joint_motor_current_rotate[1] = right_side_joint_motor_drv->get_current_rotate();
-
-        joint_motor_current_torque[0] = left_side_joint_motor_drv->get_current_torque();
-
-        joint_motor_current_torque[1] = right_side_joint_motor_drv->get_current_torque();
-
         wheel_motor_fl->update_feedback();
         wheel_motor_fr->update_feedback();
         wheel_motor_bl->update_feedback();
@@ -616,25 +623,22 @@ extern "C" void engineer_chassis_mission(void const *argument)
         wheel_motor_current_torque[2] = wheel_motor_br->get_current_torque();
         wheel_motor_current_torque[3] = wheel_motor_bl->get_current_torque();
 
-        global_databoard->write_topic(motor_torque_topic_id,*((pyro::genenral_data_t*)&(wheel_motor_current_torque[3])));
-        global_databoard->write_topic(motor_rotate_topic_id,*((pyro::genenral_data_t*)&(wheel_motor_current_rotate[3])));
+        // global_databoard->write_topic(motor_torque_topic_id,*((pyro::genenral_data_t*)&(wheel_motor_current_torque[3])));
+        // global_databoard->write_topic(motor_rotate_topic_id,*((pyro::genenral_data_t*)&(wheel_motor_current_rotate[3])));
 
-        joint_cali_update();
-        
-        chassis_set_control();
-
-
+        joint_group->update();
         if(chassis_mode == ZERO_FORCE)
         {
             chassis_zero_force();
-            // left_side_joint_motor_drv->send_torque(0);
-            // right_side_joint_motor_drv->send_torque(0);
         }
         else if(chassis_mode == RC_CONTROL)
         {
             chassis_rc_control();
-            // joint_control();
         }
+        if(chassis_mode == ZERO_FORCE)
+            joint_group->zero_force();
+        else if(chassis_mode == RC_CONTROL)
+            joint_group->control();
         vTaskDelay(1);
     }
 }

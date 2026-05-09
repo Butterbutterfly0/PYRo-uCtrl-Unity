@@ -81,7 +81,7 @@ uart_drv_t *uart_drv_t::get_instance(const which_uart uart)
     switch (uart)
     {
         case uart1:
-            static uart_drv_t uart_drv1(&huart1, 42);
+            static uart_drv_t uart_drv1(&huart1, 128);
             return &uart_drv1;
         case uart5:
             static uart_drv_t uart_drv5(&huart5, 36);

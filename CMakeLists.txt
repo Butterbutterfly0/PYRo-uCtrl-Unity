@@ -151,10 +151,15 @@ add_executable(${CMAKE_PROJECT_NAME}
         PYRo/Algorithm/Kinematics/pyro_kin_hybrid.cpp
         PYRo/Moudle/Chassis/Hybrid/pyro_hybrid_chassis.cpp
 
+        PYRo/Application/Mission/UI/UI.cpp
+        PYRo/Application/Mission/UI/UI_group.cpp
         PYRo/Application/Mission/engineer_chassis_mission.cpp
         PYRo/Application/Mission/interboard_communication_mission.cpp
         PYRo/Application/Mission/VOFA_Thread.cpp
         PYRo/Application/Mission/Magazine_mission.cpp
+        PYRo/Application/Mission/referee_system_mission.cpp
+
+        PYRo/Application/Mission/Component/joint_ctrl.cpp
 )
 
 # Add STM32CubeMX generated sources (这会自动引入 specs 文件)
@@ -200,6 +205,8 @@ target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC
         PYRo/Moudle/Chassis/Rudder
         PYRo/Moudle/Chassis/Hybrid
 
+        PYRo/Application/Mission/Component
+        PYRo/Application/Mission/UI
 )
 
 list(REMOVE_ITEM CMAKE_C_IMPLICIT_LINK_LIBRARIES ob)

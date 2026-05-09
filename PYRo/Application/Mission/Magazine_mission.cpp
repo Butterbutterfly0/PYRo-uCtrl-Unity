@@ -180,14 +180,14 @@ extern "C" void magazine_mission(void *argument)
     zero_force_topic_id = global_databoard->get_topic_id("zero_force");
     magazine_angle_topic_id = global_databoard->get_topic_id("magazine_angle");
 
-    magazine_motor_drv = new pyro::dji_gm_6020_motor_drv_t(pyro::dji_motor_tx_frame_t::id_1,pyro::can_hub_t::can2);
-    pyro::pid_t *pos_pid = new pyro::pid_t(11.0f, 0.01f, 0.2f, 3.0f, 10.0f);
-    pyro::pid_t *rot_pid = new pyro::pid_t(0.60f, 0.0f, 0.00f, 1.0f, 3.0f);
+    magazine_motor_drv = new pyro::dji_gm_6020_motor_drv_t(pyro::dji_motor_tx_frame_t::id_1,pyro::can_hub_t::can3);
+    pyro::pid_t *pos_pid = new pyro::pid_t(10.0f, 0.01f, 0.2f, 3.0f, 10.0f);
+    pyro::pid_t *rot_pid = new pyro::pid_t(0.50f, 0.2f, 0.00f, 1.0f, 3.0f);
     magazine_control = new magazine_control_t(magazine_motor_drv,pos_pid,rot_pid);
     magazine_control->disable_constraint();
-    magazine_control->set_feedback_pos_offset(2.6177);
+    magazine_control->set_feedback_pos_offset(3.1078);
 
-    lift_motor_drv = new pyro::dji_m2006_motor_drv_t(pyro::dji_motor_tx_frame_t::id_2,pyro::can_hub_t::can2);
+    lift_motor_drv = new pyro::dji_m2006_motor_drv_t(pyro::dji_motor_tx_frame_t::id_3,pyro::can_hub_t::can3);
 
     for(;;)
     {

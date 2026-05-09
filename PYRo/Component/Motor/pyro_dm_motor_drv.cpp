@@ -26,7 +26,7 @@ status_t pyro::dm_motor_drv_t::enable()
     data[7] = 0xfc;
     if(PYRO_OK!=_can_drv->send_msg(_can_id, data.data()))
         return PYRO_ERROR;
-    _enable = true;
+    // _enable = true;
     return PYRO_OK;
 }
 
@@ -34,12 +34,12 @@ status_t dm_motor_drv_t::disable()
 {
     std::array<uint8_t, 8> data;
     data.fill(0xFF);
-    data[7] = 0xfc;
+    data[7] = 0xfd;
     if(PYRO_OK!=_can_drv->send_msg(_can_id, data.data()))
     {
         return PYRO_ERROR;
     }
-    _enable = false;
+    // _enable = false;
     return PYRO_OK;
 }
 

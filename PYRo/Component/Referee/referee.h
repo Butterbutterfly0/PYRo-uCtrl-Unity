@@ -17,14 +17,31 @@ typedef enum
     RED_STANDARD_3  = 5,
     RED_AERIAL      = 6,
     RED_SENTRY      = 7,
-    BLUE_HERO       = 11,
-    BLUE_ENGINEER   = 12,
-    BLUE_STANDARD_1 = 13,
-    BLUE_STANDARD_2 = 14,
-    BLUE_STANDARD_3 = 15,
-    BLUE_AERIAL     = 16,
-    BLUE_SENTRY     = 17,
+    BLUE_HERO       = 101,
+    BLUE_ENGINEER   = 102,
+    BLUE_STANDARD_1 = 103,
+    BLUE_STANDARD_2 = 104,
+    BLUE_STANDARD_3 = 105,
+    BLUE_AERIAL     = 106,
+    BLUE_SENTRY     = 107,
 } robot_id_t;
+
+typedef enum
+{
+	RED_HERO_PLAYER = 0x101,
+	RED_ENGINEER_PLAYER = 0x102,
+	RED_STANDARD_1_PLAYER = 0x103,
+	RED_STANDARD_2_PLAYER = 0x104,
+	RED_STANDARD_3_PLAYER = 0x105,
+	RED_AERIAL_PLAYER = 0x106,
+	BLUE_HERO_PLAYER = 0x165,
+	BLUE_ENGINEER_PLAYER = 0x166,
+	BLUE_STANDARD_1_PLAYER = 0x167,
+	BLUE_STANDARD_2_PLAYER = 0x168,
+	BLUE_STANDARD_3_PLAYER = 0x169,
+	BLUE_AERIAL_PLAYER = 0x16A
+}
+robot_player_id_t;
 typedef enum
 {
     PROGRESS_UNSTART        = 0,
@@ -211,7 +228,7 @@ typedef struct __packed
  uint16_t data_cmd_id;
  uint16_t sender_id;
  uint16_t receiver_id;
- uint8_t sentry_cmd[4];      //uint8_t user_data[x];¶ÔÉÚ±ø×ÔÖ÷¾ö²ßÀ´Ëµx=4
+ uint8_t sentry_cmd[4];      //uint8_t user_data[x];ï¿½ï¿½ï¿½Ú±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ëµx=4
 }robot_interaction_data_t;
 
 typedef struct __packed
@@ -225,7 +242,7 @@ typedef struct __packed
 typedef struct __packed
 {
 	tFrameHeader FrameHead;										   // Ö¡Í·
-	uint16_t CmdId;												   // ÃüÁîÂë
+	uint16_t CmdId;												   // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	robot_interaction_data_t sentry_decision;
 	uint16_t CRC16;
 } sentry_desicion_making_t;
