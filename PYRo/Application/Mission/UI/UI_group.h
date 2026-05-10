@@ -13,10 +13,15 @@
 class UI_group
 {
     public:
-        UI_group(uint32_t index,uint32_t sender_id,pyro::uart_drv_t *uart);
+        UI_group(uint32_t index,pyro::uart_drv_t *uart);
         ~UI_group();
+        void init();
         void add_UI_obj(UI_obj* obj);
         void render(uint8_t seq);
+        void set_task_cycle(uint8_t cycle);
+        void set_update_cycle(uint8_t update_rate);
+        void set_sender_id(uint32_t sender_id);
+
     private:
         uint32_t _index;
         pyro::uart_drv_t *_uart;
@@ -31,6 +36,11 @@ class UI_group
         uint16_t _crc_16;
         // std::vector<uint8_t> _buf;
         uint8_t _buf[256];
+
+        uint8_t _task_cycle;
+        uint8_t _update_cycle;
+
+        uint8_t _update_count;
     protected:
         std::vector<UI_obj*> _UI_objs;
 };

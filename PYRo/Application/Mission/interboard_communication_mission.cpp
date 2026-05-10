@@ -25,6 +25,7 @@ typedef struct __attribute__((packed))
     float magazine_angle;
     uint8_t which_motion;
     uint8_t which_mine;
+    uint8_t overpass_pose;
     uint16_t crc16;
 } upper_board_tx_frame_t;
 
@@ -75,6 +76,7 @@ static uint32_t zero_force_id,magazine_angle_id;
 
 uint8_t which_mine=1;
 uint8_t which_motion =1;
+uint8_t overpass_pose =0;
 extern "C" void interboard_communication_mission(void const *argument)
 {
     while(global_databoard == nullptr)
@@ -126,6 +128,7 @@ extern "C" void interboard_communication_mission(void const *argument)
 
             which_mine = upper_board_tx_frame.which_mine;
             which_motion = upper_board_tx_frame.which_motion;
+            overpass_pose = upper_board_tx_frame.overpass_pose;
         }
 
         vTaskDelay(1);

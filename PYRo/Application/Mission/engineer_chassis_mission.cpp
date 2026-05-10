@@ -264,11 +264,19 @@ class joint_group_t
             }
         }
 
-        void set_target(float target[4])
+        void set_increment(float target[4])
         {
             for(int i=0;i<4;i++)
             {
                 joints[i]->increment(target[i]);
+            }
+        }
+
+        void set_target(float target[4])
+        {
+            for(int i=0;i<4;i++)
+            {
+                joints[i]->set_target(target[i]);
             }
         }
         void zero_force()
@@ -407,6 +415,8 @@ int mecanum_inverse_kinematics(
 float speed_vector[3];
 float wheel_vel[4];
 
+
+extern uint8_t overpass_pose;
 //设置底盘控制量
 void chassis_set_control()
 {
@@ -440,26 +450,38 @@ void chassis_set_control()
             joint_increment[i] = 0.0f;
         }
     }
-    else if(static_cast<pyro::dr16_drv_t::sw_state_t>(rc_data.sw_l) == pyro::dr16_drv_t::sw_state_t::SW_MID)
-    {
-        for(int i = 2; i < 4; i++)
-        {
-            joint_increment[i] = 0.0f;
-        }
-        joint_increment[0] = rc_data.ch_ry*0.05f;
-        joint_increment[1] = rc_data.ch_ry*0.05f;
-    }
-    else if(static_cast<pyro::dr16_drv_t::sw_state_t>(rc_data.sw_l) == pyro::dr16_drv_t::sw_state_t::SW_DOWN)
-    {
-        for(int i = 0; i < 2; i++)
-        {
-            joint_increment[i] = 0.0f;
-        }
-        joint_increment[2] = rc_data.ch_ry*0.005f;
-        joint_increment[3] = rc_data.ch_ry*0.005f;
-    }
+    // else if(static_cast<pyro::dr16_drv_t::sw_state_t>(rc_data.sw_l) == pyro::dr16_drv_t::sw_state_t::SW_MID)
+    // {
+    //     for(int i = 2; i < 4; i++)
+    //     {
+    //         joint_increment[i] = 0.0f;
+    //     }
+    //     joint_increment[0] = rc_data.ch_ry*0.05f;
+    //     joint_increment[1] = rc_data.ch_ry*0.05f;
+    // }
+    // else if(static_cast<pyro::dr16_drv_t::sw_state_t>(rc_data.sw_l) == pyro::dr16_drv_t::sw_state_t::SW_DOWN)
+    // {
+    //     for(int i = 0; i < 2; i++)
+    //     {
+    //         joint_increment[i] = 0.0f;
+    //     }
+    //     joint_increment[2] = rc_data.ch_ry*0.005f;
+    //     joint_increment[3] = rc_data.ch_ry*0.005f;
+    // }
 
-    joint_group->set_target(joint_increment);
+    // joint_group->set_target(joint_increment);
+    if(chassis_mode != ZERO_FORCE)
+    {
+        if(overpass_pose == 0)
+        {
+            joint_group->set_target(0);
+        }
+        else if(overpass_pose == 1)
+        {
+            float temp[4] = {6.0f,6.0,6.0,6.0};
+            joint_group->set_target(temp);
+        }
+    }
 
     //当底盘从无力变为有力时，开始关节校准
     if(last_chassis_mode == ZERO_FORCE && chassis_mode != ZERO_FORCE){

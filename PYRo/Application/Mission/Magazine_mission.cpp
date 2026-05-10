@@ -185,7 +185,7 @@ extern "C" void magazine_mission(void *argument)
     pyro::pid_t *rot_pid = new pyro::pid_t(0.50f, 0.2f, 0.00f, 1.0f, 3.0f);
     magazine_control = new magazine_control_t(magazine_motor_drv,pos_pid,rot_pid);
     magazine_control->disable_constraint();
-    magazine_control->set_feedback_pos_offset(3.1078);
+    magazine_control->set_feedback_pos_offset(-1.635);
 
     lift_motor_drv = new pyro::dji_m2006_motor_drv_t(pyro::dji_motor_tx_frame_t::id_3,pyro::can_hub_t::can3);
 

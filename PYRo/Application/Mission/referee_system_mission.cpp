@@ -9,6 +9,8 @@
 #include <sstream>
 #include <memory>
 #include "UI_group.h"
+#include "referee.h"
+
 
 pyro::uart_drv_t* referee_system_uart;
 
@@ -17,7 +19,7 @@ uint8_t referee_system_tx_buf[256];
 class hexagon_UI:public UI_group
 {
     public:
-        explicit hexagon_UI(uint16_t center_x, uint16_t center_y, uint16_t l,UI_obj::color_e color,pyro::uart_drv_t* uart):UI_group(1,robot_id_t::RED_ENGINEER,uart)
+        explicit hexagon_UI(uint16_t center_x, uint16_t center_y, uint16_t l,UI_obj::color_e color,pyro::uart_drv_t* uart):UI_group(1,uart)
         {
             this->center_x = center_x;
             this->center_y = center_y;
@@ -67,7 +69,7 @@ class hexagon_UI:public UI_group
 class MotionSelectCombo:public UI_group
 {
     public:
-        explicit MotionSelectCombo(uint16_t center_x, uint16_t center_y, uint16_t width,uint16_t height,UI_obj::color_e color,pyro::uart_drv_t* uart):UI_group(2,robot_id_t::RED_ENGINEER,uart)
+        explicit MotionSelectCombo(uint16_t center_x, uint16_t center_y, uint16_t width,uint16_t height,UI_obj::color_e color,pyro::uart_drv_t* uart):UI_group(2,uart)
         {
             this->center_x = center_x;
             this->center_y = center_y;
@@ -109,7 +111,7 @@ class MotionSelectCombo:public UI_group
 class EnergyUnitStorageP1:public UI_group
 {
         public:
-        explicit EnergyUnitStorageP1(uint16_t center_x, uint16_t center_y, uint16_t big_radius,uint16_t small_radius,UI_obj::color_e color,pyro::uart_drv_t* uart):UI_group(3,robot_id_t::RED_ENGINEER,uart)
+        explicit EnergyUnitStorageP1(uint16_t center_x, uint16_t center_y, uint16_t big_radius,uint16_t small_radius,UI_obj::color_e color,pyro::uart_drv_t* uart):UI_group(3,uart)
         {
             this->center_x = center_x;
             this->center_y = center_y;
@@ -173,8 +175,6 @@ class EnergyUnitStorageP1:public UI_group
                 cir3->update(center_x-big_radius,center_y,3,2,2,_color);
             }
 
-            
-
             if(have&8)
             {
                 cir4->update(center_x,center_y-big_radius,20 ,small_radius,2,_color);
@@ -215,7 +215,7 @@ class EnergyUnitStorageP1:public UI_group
 class EnergyUnitStorageP2:public UI_group
 {
         public:
-        explicit EnergyUnitStorageP2(uint16_t center_x, uint16_t center_y, uint16_t big_radius,uint16_t small_radius,UI_obj::color_e color,pyro::uart_drv_t* uart):UI_group(4,robot_id_t::RED_ENGINEER,uart)
+        explicit EnergyUnitStorageP2(uint16_t center_x, uint16_t center_y, uint16_t big_radius,uint16_t small_radius,UI_obj::color_e color,pyro::uart_drv_t* uart):UI_group(4,uart)
         {
             this->center_x = center_x;
             this->center_y = center_y;
@@ -270,6 +270,7 @@ EnergyUnitStorageP1 * p1;
 EnergyUnitStorageP2 * p2;
 uint16_t fresh_flag = 0;
 uint8_t seq = 0;
+uint8_t switch_flag = 0;
 
 extern uint8_t which_mine;
 extern uint8_t which_motion;
@@ -278,12 +279,75 @@ extern "C" void referee_system_mission(void const *argument)
     referee_system_uart = pyro::uart_drv_t::get_instance(pyro::uart_drv_t::which_uart::uart1);
     referee_system_uart->add_rx_event_callback(referee_system_callback, 1);
     hexagon = new hexagon_UI(960,758,126,UI_obj::color_e::blue_or_red,referee_system_uart);
+    hexagon->set_task_cycle(10);
+    hexagon->set_update_cycle(40);
     motion_select = new MotionSelectCombo(300,600,80,80,UI_obj::blue_or_red,referee_system_uart);
+    motion_select->set_task_cycle(10);
+    motion_select->set_update_cycle(40);
     p1 = new EnergyUnitStorageP1(1600,600,100,20,UI_obj::white,referee_system_uart);
+    p1->set_task_cycle(10);
+    p1->set_update_cycle(40);
     p2 =new EnergyUnitStorageP2(1600,600,100,50,UI_obj::black,referee_system_uart);
+    p2->set_task_cycle(10);
+    p2->set_update_cycle(40);
+    hexagon->init();
+    motion_select->init();
+    p1->init();
+    p2->init();
+
+    hexagon->set_sender_id(robot_id_t::RED_ENGINEER);
+    motion_select->set_sender_id(robot_id_t::RED_ENGINEER);
+    p1->set_sender_id(robot_id_t::RED_ENGINEER);
+    p2->set_sender_id(robot_id_t::RED_ENGINEER);
     // hexagon->start();
     for(;;)
     {
+
+        if(referee_data.robot_status.robot_id == robot_id_t::RED_ENGINEER || referee_data.robot_status.robot_id == robot_id_t::BLUE_ENGINEER)
+        {
+            hexagon->set_sender_id(referee_data.robot_status.robot_id);
+            motion_select->set_sender_id(referee_data.robot_status.robot_id);
+            p1->set_sender_id(referee_data.robot_status.robot_id);
+            p2->set_sender_id(referee_data.robot_status.robot_id);
+        }
+
+        {
+            if(HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_0) == GPIO_PIN_RESET)
+            {
+                switch_flag |= 1;
+            }
+            else
+            {
+                switch_flag &= 0xfe;
+            }
+
+            if(HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_2) == GPIO_PIN_RESET)
+            {
+                switch_flag |= 2;
+            }
+            else
+            {
+                switch_flag &= 0xfd;
+            }
+
+            if(HAL_GPIO_ReadPin(GPIOE,GPIO_PIN_9) == GPIO_PIN_RESET)
+            {
+                switch_flag |= 4;
+            }
+            else
+            {
+                switch_flag &= 0xfb;
+            }
+
+            if(HAL_GPIO_ReadPin(GPIOE,GPIO_PIN_13) == GPIO_PIN_RESET)
+            {
+                switch_flag |= 8;
+            }
+            else
+            {
+                switch_flag &= 0xf7;
+            }
+        }
 
         if(fresh_flag>50)
         {
@@ -302,12 +366,9 @@ extern "C" void referee_system_mission(void const *argument)
             fresh_flag++;
         }
         hexagon->render(seq++);
-        vTaskDelay(40);
         motion_select->render(seq++);
-        vTaskDelay(40);
         p1->render(seq++);
-        vTaskDelay(40);
         p2->render(seq++);
-        vTaskDelay(40);
+        vTaskDelay(10);
     }
 }
