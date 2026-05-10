@@ -71,7 +71,11 @@ extern "C"
         HAL_TIM_Base_Start(&htim2);
         HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
 
-        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 499);
+        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 1349);
+
+        // vTaskDelay(100);
+
+        // HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_1);
 
         vTaskDelete(nullptr);
     }

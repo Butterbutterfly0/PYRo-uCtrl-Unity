@@ -47,8 +47,10 @@ VOFA_Host *vofa;
 
 static uint32_t axis_current_pos_id[6]={};
 static uint32_t _axis_target_id[6]={};
+static uint32_t _selfcontrol_axis_id[6]={};
 static float axis_current_pos[6]={};
 static float axis_target_pos[6]={};
+static float selfcontrol_axis_pos[6]={};
 extern "C" void VOFA_Thread(void *argument)
 {
     vTaskDelay(500);
@@ -71,6 +73,13 @@ extern "C" void VOFA_Thread(void *argument)
     _axis_target_id[3] = global_databoard->get_topic_id("axis4_target_pos");
     _axis_target_id[4] = global_databoard->get_topic_id("axis5_target_pos");
     _axis_target_id[5] = global_databoard->get_topic_id("axis6_target_pos");
+
+    _selfcontrol_axis_id[0] = global_databoard->get_topic_id("selfcontrol axis1");
+    _selfcontrol_axis_id[1] = global_databoard->get_topic_id("selfcontrol axis2");
+    _selfcontrol_axis_id[2] = global_databoard->get_topic_id("selfcontrol axis3");
+    _selfcontrol_axis_id[3] = global_databoard->get_topic_id("selfcontrol axis4");
+    _selfcontrol_axis_id[4] = global_databoard->get_topic_id("selfcontrol axis5");
+    _selfcontrol_axis_id[5] = global_databoard->get_topic_id("selfcontrol axis6");
     for(;;)
     {
         uint32_t timestamp;
@@ -78,14 +87,16 @@ extern "C" void VOFA_Thread(void *argument)
         {
             global_databoard->read(axis_current_pos_id[i],(pyro::genenral_data_t*)&(axis_current_pos[i]),timestamp);
             global_databoard->read(_axis_target_id[i],(pyro::genenral_data_t*)&(axis_target_pos[i]),timestamp);
+            global_databoard->read(_selfcontrol_axis_id[i],(pyro::genenral_data_t*)&(selfcontrol_axis_pos[i]),timestamp);
         }
         vofa->reset();
-        for(int i=0;i<6;i++)
-            vofa->addItem(axis_current_pos[i]);
+        // for(int i=0;i<6;i++)
+        //     vofa->addItem(selfcontrol_axis_pos[i]);
+            // vofa->addItem(axis_current_pos[i]);
         // for(int i=3;i<6;i++)
             // vofa->addItem(axis_target_pos[i]*57.32);
-        // for(int i=0;i<6;i++)
-            // vofa->addItem(axis_current_pos[i]);
+        for(int i=0;i<6;i++)
+            vofa->addItem(axis_current_pos[i]);
         vofa->render_and_send();
         vTaskDelay(2);
     }

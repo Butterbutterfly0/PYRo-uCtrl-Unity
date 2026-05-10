@@ -27,6 +27,8 @@ typedef struct{
     float gripper_increment;
     float gripper_target_pos;
     float magazine_target_pos;
+    arm_motion_e get_mine_motion = arm_grip_energy_unit_0;
+    uint8_t overpass_pose = 0;
 }
 user_command_t;
 

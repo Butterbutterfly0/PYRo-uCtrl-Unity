@@ -245,12 +245,12 @@ void engineer_arm_init()
     axis2 = new pyro::axis_control_t(axis2_motor,axis2_pos_pid,axis2_rot_pid);
     axis2->enable_constraint();
     axis2->set_upper_limit(1);
-    axis2->set_lower_limit(-0.26);
+    axis2->set_lower_limit(-0.8);
     axis2->set_feedback_pos_offset(-2.3293);
 
     //初始化R3
-    pyro::pid_t *axis3_pos_pid = new pyro::pid_t(15,0.0,0.0,0.0,160);
-    pyro::pid_t *axis3_rot_pid = new pyro::pid_t(11,0.2,0.0,5.0,40);
+    pyro::pid_t *axis3_pos_pid = new pyro::pid_t(20,0.00,0.0,5.0,160);
+    pyro::pid_t *axis3_rot_pid = new pyro::pid_t(13,0.0,0.0,5.0,40);
     axis3_motor = new pyro::dm_motor_drv_t(0x6, 0x5, pyro::can_hub_t::can3);
     axis3_motor->set_position_range(-pyro::PI, pyro::PI);
     axis3_motor->set_rotate_range(-160, 160); 

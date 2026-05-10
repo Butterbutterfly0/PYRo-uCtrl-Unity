@@ -21,6 +21,9 @@ typedef struct __attribute__((packed))
     int16_t rc_ch_ry;
     uint8_t zero_force;
     float magazine_angle;
+    uint8_t which_motion;
+    uint8_t which_mine;
+    uint8_t overpass_pose;
     uint16_t crc16;
 } upper_board_tx_frame_t;
 
@@ -54,6 +57,8 @@ const static  pyro::vt03_drv_t::vt03_ctrl_t *vt03_rc_data;
 
 uint32_t zero_force_id = 0;
 uint32_t magazine_angle_id = 0;
+extern int get_mine_motion;
+extern uint8_t overpass_pose;
 
 void upper_board_tx_frame_update()
 {
@@ -93,6 +98,8 @@ void upper_board_tx_frame_update()
         {
             upper_board_tx_frame.chassis_wz = (int16_t)(dr16_rc_data->rc.ch_rx*1000);
         }
+
+        upper_board_tx_frame.rc_ch_ry = (int16_t)(dr16_rc_data->rc.ch_ry*1000);
     }
     else if(vt03_drv->check_online())
     {
@@ -135,6 +142,7 @@ void upper_board_tx_frame_update()
         {
             upper_board_tx_frame.chassis_wz = (int16_t)(vt03_rc_data->rc.ch_rx*1000);
         }
+        upper_board_tx_frame.rc_ch_ry = (int16_t)(vt03_rc_data->rc.ch_ry*1000);
     }
     
    
@@ -142,6 +150,27 @@ void upper_board_tx_frame_update()
     global_databoard->read(zero_force_id,(pyro::genenral_data_t*)&zero_force,timestamp);
     upper_board_tx_frame.zero_force = (uint8_t)zero_force;
     global_databoard->read(magazine_angle_id,(pyro::genenral_data_t*)(&upper_board_tx_frame.magazine_angle),timestamp);
+
+    {
+        if(upper_board_tx_frame.magazine_angle<pyro::PI/4&&upper_board_tx_frame.magazine_angle>-pyro::PI/4)
+        {
+            upper_board_tx_frame.which_mine = 1;
+        }
+        else if(upper_board_tx_frame.magazine_angle<pyro::PI*3/4&&upper_board_tx_frame.magazine_angle>pyro::PI/4)
+        {
+            upper_board_tx_frame.which_mine = 2;
+        }
+        else if(upper_board_tx_frame.magazine_angle<-pyro::PI/4&&upper_board_tx_frame.magazine_angle>-pyro::PI*3/4)
+        {
+            upper_board_tx_frame.which_mine = 4;
+        }
+        else
+        {
+            upper_board_tx_frame.which_mine = 3;
+        }
+    }
+    upper_board_tx_frame.which_motion = get_mine_motion;
+    upper_board_tx_frame.overpass_pose = overpass_pose;
     upper_board_tx_frame.crc16 = crc16_append(((uint8_t*)&upper_board_tx_frame)+2, sizeof(upper_board_tx_frame_t)-4);
     memcpy(upper_board_tx_buffer, &upper_board_tx_frame, sizeof(upper_board_tx_frame_t));
 }

@@ -227,6 +227,9 @@ void arm_planner_t::fixed_motion_process()
     }
 }
 
+int get_mine_motion = 1;
+uint8_t overpass_pose = 0;
+
 //将机械臂的规划量应用到实际上的机械臂上
 void arm_planner_t::planning_application()
 {
@@ -259,6 +262,31 @@ void arm_planner_t::planning_application()
         zf = 0;
         break;
     }
+
+    switch(_user_command.get_mine_motion)
+    {
+        case arm_grip_energy_unit_0:
+        get_mine_motion =1;
+        break;
+        case arm_grip_energy_unit_60:
+        get_mine_motion =2;
+        break;
+        case arm_grip_energy_unit_120:
+        get_mine_motion =3;
+        break;
+        case arm_grip_energy_unit_180:
+        get_mine_motion =4;
+        break;
+        case arm_grip_energy_unit_240:
+        get_mine_motion =5;
+        break;
+        case arm_grip_energy_unit_300:
+        get_mine_motion =6;
+        break;
+        default:
+        get_mine_motion=1;
+    }
+    overpass_pose = _user_command.overpass_pose;
 
     //调试用
     global_databoard->write_topic(_axis_target_id[0],*((pyro::genenral_data_t*)&_axis_target_pos[0]));
@@ -341,6 +369,7 @@ extern "C" void engineer_arm_planning_mission(void* args)
     arm_planner._arm_fixed_motion_group.add_motion(arm_grip_energy_unit_120,arm_grip_energy_unit_120_motion,arm_grip_energy_unit_120_motion_stage_num);
     arm_planner._arm_fixed_motion_group.add_motion(arm_grip_energy_unit_180,arm_grip_energy_unit_180_motion,arm_grip_energy_unit_180_motion_stage_num);
     arm_planner._arm_fixed_motion_group.add_motion(arm_grip_energy_unit_240,arm_grip_energy_unit_240_motion,arm_grip_energy_unit_240_motion_stage_num);
+    arm_planner._arm_fixed_motion_group.add_motion(arm_grip_energy_unit_300,arm_grip_energy_unit_300_motion,arm_grip_energy_unit_300_motion_stage_num);
     arm_planner._arm_fixed_motion_group.add_motion(arm_push_energy_unit,arm_push_energy_unit_motion,arm_push_energy_unit_motion_stage_num);
     arm_planner._arm_fixed_motion_group.add_motion(arm_pop_energy_unit,arm_pop_energy_unit_motion,arm_pop_energy_unit_motion_stage_num);
 

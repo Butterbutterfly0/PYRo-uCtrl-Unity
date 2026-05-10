@@ -71,7 +71,7 @@ void arm_rc_command_t::dr16_update(specific_control_mode_t& specific_control_mod
         // specific_control_mode = SELF_CONTROL_TRANSITION;
         // transition_state = Transition_start;
         specific_control_mode = MOTION_Start;
-        user_command.selected_motion = arm_motion_e::arm_pop_energy_unit;
+        user_command.selected_motion = arm_motion_e::arm_grip_energy_unit_300;
     }
 
     //左开关从其他位置拨到中(当当前状态为正常姿态)
@@ -193,6 +193,9 @@ void arm_rc_command_t::vt03_update(specific_control_mode_t& specific_control_mod
 
     static uint8_t last_Fn_state = 0;
     static uint8_t last_reflect_state = 0;
+    static uint8_t last_trigger_state = 0 ;
+    static uint8_t last_pause_state = 0;
+    // _vt03_rc_data->rc.
 
     if(!vt03_drv->check_online())
     {
@@ -224,36 +227,74 @@ void arm_rc_command_t::vt03_update(specific_control_mode_t& specific_control_mod
     //按下z键
     if(_vt03_rc_data->key.z.state && _vt03_rc_data->key.z.state!=last_z_state && !(specific_control_mode == RESET_POSE || specific_control_mode == RESET_POSE_TRANSITION))
     {
-        specific_control_mode = MOTION_Start;
-        user_command.selected_motion = arm_motion_e::arm_grip_energy_unit_0;
+        switch(user_command.get_mine_motion)
+        {
+            case arm_motion_e::arm_grip_energy_unit_0:
+            user_command.get_mine_motion =  arm_motion_e::arm_grip_energy_unit_60;
+            break;
+            case arm_motion_e::arm_grip_energy_unit_60:
+            user_command.get_mine_motion =  arm_motion_e::arm_grip_energy_unit_120;
+            break;
+            case arm_motion_e::arm_grip_energy_unit_120:
+            user_command.get_mine_motion =  arm_motion_e::arm_grip_energy_unit_180;
+            break;
+            case arm_motion_e::arm_grip_energy_unit_180:
+            user_command.get_mine_motion =  arm_motion_e::arm_grip_energy_unit_240;
+            break;
+            case arm_motion_e::arm_grip_energy_unit_240:
+            user_command.get_mine_motion =  arm_motion_e::arm_grip_energy_unit_300;
+            break;
+            case arm_motion_e::arm_grip_energy_unit_300:
+            default:
+            user_command.get_mine_motion =  arm_motion_e::arm_grip_energy_unit_0;
+            break;
+        }
+        
+        
     }
 
     //按下x键
     if(!_vt03_rc_data->key.x.state&&_vt03_rc_data->key.x.state!=last_x_state && !(specific_control_mode == RESET_POSE || specific_control_mode == RESET_POSE_TRANSITION))
     {
         specific_control_mode = MOTION_Start;
-        user_command.selected_motion = arm_motion_e::arm_grip_energy_unit_60;
+        user_command.selected_motion = user_command.get_mine_motion;
     }
 
     //按下c键
     if(!_vt03_rc_data->key.c.state&&_vt03_rc_data->key.c.state!=last_c_state && !(specific_control_mode == RESET_POSE || specific_control_mode == RESET_POSE_TRANSITION))
     {
-        specific_control_mode = MOTION_Start;
-        user_command.selected_motion = arm_motion_e::arm_grip_energy_unit_120;
+        specific_control_mode = NORMAL_POSE_TRANSITION;
+        transition_state = Transition_start;
     }
 
     //按下v键
-    if(!_vt03_rc_data->key.v.state&&_vt03_rc_data->key.v.state!=last_v_state && !(specific_control_mode == RESET_POSE || specific_control_mode == RESET_POSE_TRANSITION))
-    {
-        specific_control_mode = MOTION_Start;
-        user_command.selected_motion = arm_motion_e::arm_grip_energy_unit_180;
-    }
+    // if(!_vt03_rc_data->key.v.state&&_vt03_rc_data->key.v.state!=last_v_state && !(specific_control_mode == RESET_POSE || specific_control_mode == RESET_POSE_TRANSITION))
+    // {
+    //     specific_control_mode = MOTION_Start;
+    //     user_command.selected_motion = arm_motion_e::arm_grip_energy_unit_300;
+    // }
 
     //按下g键
-    if(((!_vt03_rc_data->key.g.state&&_vt03_rc_data->key.g.state!=last_g_state)||(!_vt03_rc_data->rc.fn_r.state&&_vt03_rc_data->rc.fn_r.state!=last_reflect_state)) && !(specific_control_mode == RESET_POSE || specific_control_mode == RESET_POSE_TRANSITION))
+    if(((!_vt03_rc_data->key.g.state&&_vt03_rc_data->key.g.state!=last_g_state)) && !(specific_control_mode == RESET_POSE || specific_control_mode == RESET_POSE_TRANSITION))
     {
         user_command.hold_gripper = !user_command.hold_gripper;
     }
+    else if((!_vt03_rc_data->rc.fn_r.state&&_vt03_rc_data->rc.fn_r.state!=last_reflect_state)&&!(specific_control_mode == RESET_POSE || specific_control_mode == RESET_POSE_TRANSITION) )
+    {
+        user_command.hold_gripper = !user_command.hold_gripper;
+    }
+
+    if((!_vt03_rc_data->rc.trigger.state&&_vt03_rc_data->rc.trigger.state!=last_trigger_state)&&!(specific_control_mode == RESET_POSE || specific_control_mode == RESET_POSE_TRANSITION) )
+    {
+        specific_control_mode = MOTION_Start;
+        user_command.selected_motion = arm_motion_e::arm_pop_energy_unit;
+    }
+
+    // if((!_vt03_rc_data->rc.fn_r.state&&_vt03_rc_data->rc.fn_r.state!=last_reflect_state)&&!(specific_control_mode == RESET_POSE || specific_control_mode == RESET_POSE_TRANSITION) )
+    // {
+    //     specific_control_mode = MOTION_Start;
+    //     user_command.selected_motion = arm_motion_e::arm_pop_energy_unit;
+    // }
 
     //按下r键
     if(((!_vt03_rc_data->key.r.state&&_vt03_rc_data->key.r.state!=last_r_state)||(!_vt03_rc_data->rc.fn_l.state&&_vt03_rc_data->rc.fn_l.state!=last_Fn_state)) && !(specific_control_mode == RESET_POSE || specific_control_mode == RESET_POSE_TRANSITION))
@@ -283,6 +324,26 @@ void arm_rc_command_t::vt03_update(specific_control_mode_t& specific_control_mod
         specific_control_mode = MOTION_Start;
         user_command.selected_motion = arm_motion_e::arm_pop_energy_unit;
     }
+
+    // if(_vt03_rc_data->rc.pause.state && _vt03_rc_data->rc.pause.state != last_pause_state &&(specific_control_mode == MOTION ))
+    // {
+    //     specific_control_mode = MOTION_PAUSE;
+    // }
+    // //左开关从其他位置拨到下(当当前状态为进行动作暂停状态)
+    // else if(_vt03_rc_data->rc.pause.state && _vt03_rc_data->rc.pause.state != last_pause_state &&(specific_control_mode == MOTION_PAUSE ))
+    // {
+    //     specific_control_mode = MOTION_CONTINUE;
+    // }
+
+    if(_vt03_rc_data->rc.pause.state && _vt03_rc_data->rc.pause.state != last_pause_state && !(specific_control_mode == RESET_POSE || specific_control_mode == RESET_POSE_TRANSITION))
+    {
+        user_command.overpass_pose = !user_command.overpass_pose;
+    }
+    else if((specific_control_mode == RESET_POSE || specific_control_mode == RESET_POSE_TRANSITION))
+    {
+        user_command.overpass_pose = 0;
+    }
+
     
     last_gear_state = _vt03_rc_data->rc.gear.state;
     last_z_state = _vt03_rc_data->key.z.state;
@@ -295,6 +356,8 @@ void arm_rc_command_t::vt03_update(specific_control_mode_t& specific_control_mod
     last_f_state = _vt03_rc_data->key.f.state;
     last_Fn_state = _vt03_rc_data->rc.fn_l.state;
     last_reflect_state = _vt03_rc_data->rc.fn_r.state;
+    last_trigger_state = _vt03_rc_data->rc.trigger.state;
+    last_pause_state = _vt03_rc_data->rc.pause.state;
 }
 
 void arm_rc_command_t::update(specific_control_mode_t& specific_control_mode,transition_state_t& transition_state,user_command_t& user_command)
