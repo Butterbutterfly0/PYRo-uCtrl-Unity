@@ -278,7 +278,7 @@ extern "C" void referee_system_mission(void const *argument)
 {
     referee_system_uart = pyro::uart_drv_t::get_instance(pyro::uart_drv_t::which_uart::uart1);
     referee_system_uart->add_rx_event_callback(referee_system_callback, 1);
-    hexagon = new hexagon_UI(960,758,126,UI_obj::color_e::blue_or_red,referee_system_uart);
+    hexagon = new hexagon_UI(960,630,140,UI_obj::color_e::blue_or_red,referee_system_uart);
     hexagon->set_task_cycle(10);
     hexagon->set_update_cycle(40);
     motion_select = new MotionSelectCombo(300,600,80,80,UI_obj::blue_or_red,referee_system_uart);
@@ -323,11 +323,11 @@ extern "C" void referee_system_mission(void const *argument)
 
             if(HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_2) == GPIO_PIN_RESET)
             {
-                switch_flag |= 2;
+                switch_flag |= 8;
             }
             else
             {
-                switch_flag &= 0xfd;
+                switch_flag &= 0xf7;
             }
 
             if(HAL_GPIO_ReadPin(GPIOE,GPIO_PIN_9) == GPIO_PIN_RESET)
@@ -341,11 +341,11 @@ extern "C" void referee_system_mission(void const *argument)
 
             if(HAL_GPIO_ReadPin(GPIOE,GPIO_PIN_13) == GPIO_PIN_RESET)
             {
-                switch_flag |= 8;
+                switch_flag |= 2;
             }
             else
             {
-                switch_flag &= 0xf7;
+                switch_flag &= 0xfd;
             }
         }
 
@@ -361,14 +361,17 @@ extern "C" void referee_system_mission(void const *argument)
         {
             motion_select->update(which_motion);
             hexagon->update();
-            p1->update(0x8,which_mine);
+            p1->update(switch_flag,which_mine);
             p2->update();
             fresh_flag++;
         }
         hexagon->render(seq++);
+        vTaskDelay(20);
         motion_select->render(seq++);
+        vTaskDelay(20);
         p1->render(seq++);
+        vTaskDelay(20);
         p2->render(seq++);
-        vTaskDelay(10);
+        vTaskDelay(20);
     }
 }

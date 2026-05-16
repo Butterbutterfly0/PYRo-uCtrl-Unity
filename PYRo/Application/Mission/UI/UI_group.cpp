@@ -31,12 +31,12 @@ void UI_group::add_UI_obj(UI_obj* obj)
 
 void UI_group::render(uint8_t seq)
 {
-    _task_cycle = (_task_cycle+1)%(this->_update_cycle/this->_task_cycle);
+    // this->_update_count = (this->_update_count+1)%(this->_update_cycle/this->_task_cycle);
 
-    if(_task_cycle!=0)
-    {
-        return;
-    }
+    // if(this->_update_count!=0)
+    // {
+    //     return;
+    // }
 
 
     switch(_UI_objs.size())
