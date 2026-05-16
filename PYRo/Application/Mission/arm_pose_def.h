@@ -7,6 +7,7 @@
 
 extern float arm_reset_pose[6];
 extern float arm_normal_pose[6];
+extern float arm_cross_pose[6];
 
 //取矿定义
 //以最上方矿的中心轴线为起点，以补给站六边形的中心为圆心，顺时针旋转所得到的角度来对动作进行命名

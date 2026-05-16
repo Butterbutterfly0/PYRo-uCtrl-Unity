@@ -5,6 +5,8 @@
 #include <string.h>
 #include "cmsis_os.h"
 
+#include "pyro_core_def.h"
+
 //本模块用来定义一个过渡模块，目的是使用三次多项式插值的方式，为机械臂提供在两个点之间的平滑过渡
 //本模块的命名不太好记忆
 
@@ -14,6 +16,7 @@ typedef enum
     Not_transition,
     Transition_start,
     Transition_running,
+    Transition_reverse_running,
     Transition_end
 }
 transition_state_t;

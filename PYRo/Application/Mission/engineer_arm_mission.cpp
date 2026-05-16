@@ -83,11 +83,11 @@ class axis_control_t
             }
             else
             {
-                if(_target_pos>_upper_limit)
+                if(_target_pos>PI)
                 {
                     _target_pos=_target_pos-2*pyro::PI;
                 }
-                else if(_target_pos<_lower_limit)
+                else if(_target_pos<-PI)
                 {
                     _target_pos=_target_pos+2*pyro::PI;
                 }
@@ -115,7 +115,7 @@ class axis_control_t
 
         //该函数主要解决在NO_CONSTRAINT状态下逻辑角度与目标角度在PI或-PI周围的情况，该函数会计算出一个能够使位置环PID无论从顺时针经过跳变点(feedback:170,target:-170,func_output:190)或者从逆时针经过跳变点(feedback:-170,target:170,func_output:-190)都会得到与实际经过角度相等的目标角度
         //说的有点不清楚，自己推一遍
-        inline float rot_angle_correction_pi(float feedback,float target,float max,float min)
+        float rot_angle_correction_pi(float feedback,float target,float max,float min)
         {
             if(feedback-target>PI)
 		        return target-min+max;
@@ -139,6 +139,7 @@ class axis_control_t
             else
             {
                 _target_rot = _pos_pid->calculate(rot_angle_correction_pi(_feedback_pos,_target_pos,PI,-PI),_feedback_pos);//有蛊
+
                 // _target_rot=_pos_pid->calculate(_target_pos,_feedback_pos);
             }
             _control_value = _rot_pid->calculate(_target_rot,_feedback_rot);
@@ -221,8 +222,8 @@ void engineer_arm_init()
     //设定上下限位
     //设定反馈位置偏移量
     //后续的旋转轴流程类似
-    pyro::pid_t *axis1_pos_pid = new pyro::pid_t(10,0.0,0.0,0.0,52);
-    pyro::pid_t *axis1_rot_pid = new pyro::pid_t(8.8,0.0,0.0,0.0,27);
+    pyro::pid_t *axis1_pos_pid = new pyro::pid_t(12,0,0.0,20,52);
+    pyro::pid_t *axis1_rot_pid = new pyro::pid_t(8.8,12.0,0.0,10.0,27);
     axis1_motor = new pyro::dm_motor_drv_t(0x2, 0x1, pyro::can_hub_t::can1);
     axis1_motor->set_position_range(-pyro::PI, pyro::PI);
     axis1_motor->set_rotate_range(-52, 52); 
@@ -231,7 +232,7 @@ void engineer_arm_init()
     axis1->enable_constraint();
     axis1->set_upper_limit(pyro::PI);
     axis1->set_lower_limit(-2.1599);
-    axis1->set_feedback_pos_offset(0.69169);
+    axis1->set_feedback_pos_offset(0.722468);
 
     //初始化R2
     pyro::pid_t *axis2_pos_pid = new pyro::pid_t(20,0,0.0,20.0,150);
@@ -458,38 +459,38 @@ void engineer_arm_zeroforce()
     end_axis->reset_pid();
 
     //发送零力矩
-    if(axis1_motor->is_enable())
-        axis1_motor->disable();
+    if(!axis1_motor->is_enable())
+        axis1_motor->enable();
     else
         axis1_motor->send_torque(0);
 
-    if(axis2_motor->is_enable())
-        axis2_motor->disable();
+    if(!axis2_motor->is_enable())
+        axis2_motor->enable();
     else
         axis2_motor->send_torque(0);
 
-    if(axis3_motor->is_enable())
-        axis3_motor->disable();
+    if(!axis3_motor->is_enable())
+        axis3_motor->enable();
     else
         axis3_motor->send_torque(0);
 
-    if(axis4_motor->is_enable())
-        axis4_motor->disable();
+    if(!axis4_motor->is_enable())
+        axis4_motor->enable();
     else
         axis4_motor->send_torque(0);
 
-    if(axis5_motor->is_enable())
-        axis5_motor->disable();
+    if(!axis5_motor->is_enable())
+        axis5_motor->enable();
     else
         axis5_motor->send_torque(0);
 
-    if(axis6_motor->is_enable())
-        axis6_motor->disable();
+    if(!axis6_motor->is_enable())
+        axis6_motor->enable();
     else
         axis6_motor->send_torque(0);
 
-    if(end_motor->is_enable())
-        end_motor->disable();
+    if(!end_motor->is_enable())
+        end_motor->enable();
     else
         end_motor->send_torque(0);
 }
@@ -610,6 +611,7 @@ void engineer_arm_mission(void* args)
         else if(control_mode==POSITION_CONTROL)
         {
             engineer_arm_control();
+            // engineer_arm_zeroforce();
         }
         else if(control_mode == TORQUE_COMPENSATION)
         {

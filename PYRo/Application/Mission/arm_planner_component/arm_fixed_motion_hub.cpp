@@ -28,6 +28,19 @@ void arm_fixed_motion_t::start_motion()
     memcpy(_now_slice,_motion_slice[0],sizeof(float)*8);
 }
 
+void arm_fixed_motion_t::start_motion_reverse()
+{
+    _motion_current_stage = _motion_current_stage;
+    if(_motion_current_stage==-1)
+    {
+        _motion_transition_state = Transition_end;
+        return ;
+    }
+    _motion_transition_state = Transition_reverse_running;
+    memcpy(_now_slice,_motion_slice[_motion_current_stage],sizeof(float)*8);
+    // _now_slice[0] = _motion_slice[_motion_current_stage+1][0];
+}
+
 bool arm_fixed_motion_t::update_motion(float current_period)
 {
     bool ret = false;//不需要切换阶段
@@ -47,13 +60,30 @@ bool arm_fixed_motion_t::update_motion(float current_period)
             }
         }
     }
+    else if(_motion_transition_state == Transition_reverse_running)
+    {
+        if(current_period>=_now_slice[0])//当前计时器时间大于当前切片的过渡时间
+        {
+            _motion_current_stage--;//阶段数加1
+            if(_motion_current_stage==-1)//当前阶段大于总阶段数
+            {
+                _motion_transition_state = Transition_end;//动作完成
+            }
+            else
+            {
+                ret = true;//动作未完成，进需要切换动作的下一个阶段
+                memcpy(_now_slice,_motion_slice[_motion_current_stage],sizeof(float)*8);//拷贝切片
+                // _now_slice[0] = _motion_slice[_motion_current_stage+1][0];
+            }
+        }
+    }
     return ret;
 }
 
 bool arm_fixed_motion_t::current_step_over(float current_period)
 {
     bool ret = false;//判断当前阶段是否完成
-    if(_motion_transition_state == Transition_running)
+    if(_motion_transition_state == Transition_running || _motion_transition_state == Transition_reverse_running)
     {
         if(current_period>=_now_slice[0])
         {
@@ -79,6 +109,15 @@ void arm_fixed_motion_group_t::start_motion(float current_position[6])
 {
     float slice[7];
     _now_motion ->start_motion();
+    _now_motion ->get_motion_slice(slice);
+    // _motion_transition.init(slice[0],current_position,slice+1);
+    //开始动作，并获取切片，初始化动作过渡器(无用，现在实际上是用的同一个)
+}
+
+void arm_fixed_motion_group_t::start_motion_reverse(float current_position[6])
+{
+    float slice[7];
+    _now_motion ->start_motion_reverse();
     _now_motion ->get_motion_slice(slice);
     // _motion_transition.init(slice[0],current_position,slice+1);
     //开始动作，并获取切片，初始化动作过渡器(无用，现在实际上是用的同一个)

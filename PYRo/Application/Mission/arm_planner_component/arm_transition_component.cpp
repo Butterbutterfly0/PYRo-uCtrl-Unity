@@ -98,11 +98,35 @@ void motion_transition_t::init(float transition_period, float start_angle[6],flo
     _transition_start_Tick = pyro::dwt_drv_t::get_timeline_ms();
     _transition_total_period = transition_period;
     _transition_current_period = 0;
-    for(int i=0;i<6;i++)
+    for(int i=0;i<3;i++)
+    {
+        _axis_transition[i].init(transition_period, start_angle[i],end_angle[i]);
+    }
+    if(((end_angle[3]-start_angle[3])>pyro::PI)&&start_angle[3]<0 && end_angle[3]>0)
+    {
+            end_angle[3]=start_angle[3] -(2*pyro::PI-(end_angle[3]-start_angle[3]));
+    }
+    else if(((end_angle[3]-start_angle[3])<-pyro::PI)&&start_angle[3]>0 && end_angle[3]<0)
+    {
+            end_angle[3] = start_angle[3]  +(2*pyro::PI+(end_angle[3]-start_angle[3]));
+    }
+
+    if(end_angle[3]>pyro::PI*3/2)
+    {
+        end_angle[3]-=2*pyro::PI;
+    }
+    else if(end_angle[3]<-pyro::PI*3/2)
+    {
+        end_angle[3]+=2*pyro::PI;
+    }
+    _axis_transition[3].init(transition_period, start_angle[3],end_angle[3]);
+    for(int i=4;i<6;i++)
     {
         _axis_transition[i].init(transition_period, start_angle[i],end_angle[i]);
     }
 }
+
+
 
 void motion_transition_t::interpolation_update()
 {

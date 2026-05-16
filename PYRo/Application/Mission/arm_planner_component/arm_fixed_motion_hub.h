@@ -18,6 +18,7 @@ class arm_fixed_motion_t
         void reset();
         //开始动作
         void start_motion();
+        void start_motion_reverse();
         //传入一个时间长度，更新动作并判断当前阶段是否完成
         bool update_motion(float current_period);
         //传入一个时间长度，不更新动作并判断当前阶段是否完成
@@ -49,6 +50,7 @@ class arm_fixed_motion_group_t
         void select_motion(arm_motion_e motion);
         //传入当前位置，开始动作
         void start_motion(float current_position[6]);
+        void start_motion_reverse(float current_position[6]);
         //传入一个时间长度，更新动作并判断当前所选择的动作的当前阶段是否完成
         bool update_motion(float current_period);
         //传入一个时间长度，不更新动作并判断当前所选择的动作的当前阶段是否完成

@@ -135,6 +135,11 @@ void arm_planner_t::transition_process()
             time_spend = 2;
             _motion_transition.init(time_spend,_axis_current_pos, _arm_self_control_command.get_self_control_command());
             break;
+            case CROSS_POSE_TRANSITION:
+            _transition_state = Transition_running;
+            time_spend = 2;
+            _motion_transition.init(time_spend,_axis_current_pos, arm_cross_pose);
+            break;
         }
     }
     else if(_transition_state == Transition_running)
@@ -153,6 +158,9 @@ void arm_planner_t::transition_process()
                 break;
                 case NORMAL_POSE_TRANSITION:
                 _specific_control_mode = NORMAL_POSE;//通常状态
+                break;
+                case CROSS_POSE_TRANSITION:
+                _specific_control_mode = CROSS_POSE;//自控状态
                 break;
                 case SELF_CONTROL_TRANSITION:
                 _specific_control_mode = SELF_CONTROL;//自控状态
@@ -184,6 +192,45 @@ void arm_planner_t::fixed_motion_process()
         _specific_control_mode = MOTION;
     }
     else if(_specific_control_mode == MOTION)
+    {
+        //动作运行状态
+        if(_arm_fixed_motion_group.motion_over())//判断动作是否完成
+        {
+            //如果完成则向通常位置进行过渡
+            _specific_control_mode = NORMAL_POSE_TRANSITION;
+            _transition_state = Transition_start;
+        }
+        if(_arm_fixed_motion_group.update_motion(_motion_transition.get_transition_current_period()))//判断当前动作的当前阶段是否完成
+        {
+            // 如果完成则获取动作下一阶段的切片，并初始化过渡参数
+            _arm_fixed_motion_group.get_motion_slice(slice);
+            _motion_transition.init(slice[0],_axis_target_pos,slice+1);
+            if(slice[7] == 1.0f)
+                _user_command.hold_gripper = true;
+            else
+                _user_command.hold_gripper = false;
+        }
+        else
+        {
+            //插值更新
+            _motion_transition.interpolation_update();
+        }
+    }
+    else if(_specific_control_mode == MOTION_REVERSE_Start)
+    {
+        //动作开始
+
+        //选择对应动作
+        // _arm_fixed_motion_group.select_motion(_user_command.selected_motion);
+        //开始动作
+        _arm_fixed_motion_group.start_motion_reverse(_axis_current_pos);
+        //更新动作
+        _arm_fixed_motion_group.update_motion(0);
+        _motion_transition.init(slice[0],_axis_target_pos,slice+1);
+        _specific_control_mode = MOTION_REVERSE;
+        
+    }
+    else if(_specific_control_mode == MOTION_REVERSE)
     {
         //动作运行状态
         if(_arm_fixed_motion_group.motion_over())//判断动作是否完成
@@ -245,6 +292,10 @@ void arm_planner_t::planning_application()
         memcpy(_axis_target_pos,arm_normal_pose,sizeof(float)*6);
         zf = 0;
         break;
+        case CROSS_POSE://如果是自控状态，实时跟随自控的位置
+        memcpy(_axis_target_pos,arm_cross_pose,sizeof(float)*6);
+        zf = 0;
+        break;
         case SELF_CONTROL://如果是自控状态，实时跟随自控的位置
         memcpy(_axis_target_pos,_arm_self_control_command.get_self_control_command(),sizeof(float)*6);
         zf = 0;
@@ -252,7 +303,9 @@ void arm_planner_t::planning_application()
         case RESET_POSE_TRANSITION:
         case NORMAL_POSE_TRANSITION:
         case SELF_CONTROL_TRANSITION:
+        case CROSS_POSE_TRANSITION:
         case MOTION:
+        case MOTION_REVERSE:
         case MOTION_PAUSE:
         //处于以上位置时，将插值应用到机械臂
         memcpy(_axis_target_pos,_motion_transition.get_transition_interpolation_value(),sizeof(float)*6);
@@ -317,6 +370,10 @@ void arm_planner_t::application_async()
         memcpy(control_target_param->axis_target_pos,_axis_target_pos,sizeof(float)*6);
         control_target_param->hold_gripper = _user_command.hold_gripper;
         // control_target_param->gripper_increment = _user_command.gripper_increment;
+        case CROSS_POSE:
+        control_target_param->control_mode = POSITION_CONTROL;
+        memcpy(control_target_param->axis_target_pos,_axis_target_pos,sizeof(float)*6);
+        control_target_param->hold_gripper = _user_command.hold_gripper;
         break;
         case SELF_CONTROL:
         control_target_param->control_mode = POSITION_CONTROL;
@@ -327,7 +384,9 @@ void arm_planner_t::application_async()
         case RESET_POSE_TRANSITION:
         case NORMAL_POSE_TRANSITION:
         case SELF_CONTROL_TRANSITION:
+        case CROSS_POSE_TRANSITION:
         case MOTION:
+        case MOTION_REVERSE:
         case MOTION_CONTINUE:
         case MOTION_PAUSE:
         control_target_param->control_mode = POSITION_CONTROL;
